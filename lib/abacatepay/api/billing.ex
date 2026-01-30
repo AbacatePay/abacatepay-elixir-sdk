@@ -1,6 +1,6 @@
 defmodule AbacatePay.Api.Billing do
   @moduledoc ~S"""
-  Module for handling /billing endpoints in the API.
+  Module for handling billing-related endpoints in the API.
   """
 
   @doc """

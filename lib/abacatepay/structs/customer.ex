@@ -1,58 +1,62 @@
 defmodule AbacatePay.Customer do
   @moduledoc ~S"""
-  Estrutura que representa um cliente na AbacatePay.
+  Module that represents a customer in AbacatePay.
   """
 
   alias AbacatePay.Api
 
   defstruct [
     :id,
-    :metadata
+    :name,
+    :cellphone,
+    :tax_id,
+    :email
   ]
 
-  @typedoc "Id único do cliente na AbacatePay."
+  @typedoc "The customer unique ID in AbacatePay."
   @type id :: String.t()
 
-  @typedoc """
-  Dados do cliente.
+  @typedoc "The customer name."
+  @type name :: String.t() | nil
 
-  - `:name` - Nome do cliente
-  - `:cellphone` - Telefone do cliente
-  - `:tax_id` - Documento válido do cliente, podendo ser CPF ou CNPJ
-  - `:email` - E-mail do cliente
-  """
-  @type metadata :: %{
-          name: String.t() | nil,
-          cellphone: String.t() | nil,
-          tax_id: String.t() | nil,
-          email: String.t()
-        }
+  @typedoc "The customer cellphone."
+  @type cellphone :: String.t() | nil
+
+  @typedoc "The customer tax ID (CPF or CNPJ)."
+  @type tax_id :: String.t() | nil
+
+  @typedoc "The customer email."
+  @type email :: String.t()
 
   @type t :: %__MODULE__{
           id: id,
-          metadata: metadata
+          name: name,
+          cellphone: cellphone,
+          tax_id: tax_id,
+          email: email
         }
 
   @doc """
-  Permite que você crie um novo cliente para a sua loja.
+  Creates a new customer.
 
-  ## Exemplos
+  ## Examples
 
       iex> customer = %AbacatePay.Customer{
-      ...>   metadata: %{
-      ...>     name: "Daniel Lima",
-      ...>     cellphone: "(11) 4002-8922",
-      ...>     email: "daniel_lima@abacatepay.com",
-      ...>     tax_id: "123.456.789-01"
-      ...>   }
+      ...>   name: "Daniel Lima",
+      ...>   cellphone: "(11) 4002-8922",
+      ...>   email: "daniel_lima@abacatepay.com",
+      ...>   tax_id: "123.456.789-01"
       ...> }
       iex> AbacatePay.Customer.create(customer)
-      {:ok, %AbacatePay.Customer{id: "cust_aebxkhDZNaMmJeKsy0AHS0FQ", metadata: %{...}}}
+      {:ok, %AbacatePay.Customer{id: "cust_aebxkhDZNaMmJeKsy0AHS0FQ", name: "Daniel Lima", ...}}
   """
-  def create(%__MODULE__{metadata: metadata}) do
-    customer = build_api_customer(%__MODULE__{metadata: metadata})
-
-    case Api.Customer.create_customer(customer) do
+  def create(%__MODULE__{name: name, cellphone: cellphone, email: email, tax_id: tax_id}) do
+    case Api.Customer.create_customer(%{
+           name: name,
+           cellphone: cellphone,
+           email: email,
+           taxId: tax_id
+         }) do
       {:ok, data} ->
         build_pretty_customer(data)
 
@@ -62,12 +66,12 @@ defmodule AbacatePay.Customer do
   end
 
   @doc """
-  Permite que você recupere uma lista de todos os seus clientes.
+  Gets a list of all customers.
 
-  ## Exemplos
+  ## Examples
 
       iex> AbacatePay.Customer.list()
-      {:ok, [%AbacatePay.Customer{id: "cust_aebxkhDZNaMmJeKsy0AHS0FQ", metadata: %{...}}, ...]}
+      {:ok, [%AbacatePay.Customer{id: "cust_aebxkhDZNaMmJeKsy0AHS0FQ", ...}, ...]}
   """
   def list do
     case Api.Customer.list_customers() do
@@ -81,31 +85,71 @@ defmodule AbacatePay.Customer do
     end
   end
 
-  @doc false
-  def build_api_customer(%__MODULE__{id: id, metadata: metadata}) do
-    %{
-      id: id,
-      metadata: %{
-        name: metadata.name,
-        cellphone: metadata.cellphone,
-        email: metadata.email,
-        taxId: metadata.tax_id
-      }
-    }
-  end
+  @doc """
+  Builds a `AbacatePay.Customer` struct from raw API data.
 
-  @doc false
+  ## Examples
+
+      iex> raw_data = %{
+      ...>   "id" => "cust_aebxkhDZNaMmJeKsy0AHS0FQ",
+      ...>   "metadata" => %{
+      ...>     "name" => "Daniel Lima",
+      ...>     "cellphone" => "(11) 4002-8922",
+      ...>     "email" => "daniel_lima@abacatepay.com",
+      ...>     "taxId" => "123.456.789-01"
+      ...>   }
+      ...> }
+      iex> AbacatePay.Customer.build_pretty_customer(raw_data)
+      {:ok, %AbacatePay.Customer{id: "cust_aebxkhDZNaMmJeKsy0AHS0FQ", name: "Daniel Lima", ...}}
+  """
+  @spec build_pretty_customer(raw_data :: map()) :: {:ok, t()}
   def build_pretty_customer(raw_data) do
     pretty_fields = %AbacatePay.Customer{
       id: Map.get(raw_data, "id"),
-      metadata: %{
-        name: Map.get(raw_data, "name"),
-        cellphone: Map.get(raw_data, "cellphone"),
-        tax_id: Map.get(raw_data, "taxId"),
-        email: Map.get(raw_data, "email")
-      }
+      name: get_in(raw_data, ["metadata", "name"]),
+      cellphone: get_in(raw_data, ["metadata", "cellphone"]),
+      tax_id: get_in(raw_data, ["metadata", "taxId"]),
+      email: get_in(raw_data, ["metadata", "email"])
     }
 
     {:ok, pretty_fields}
+  end
+
+  @doc """
+  Builds a map suitable for the API from a `AbacatePay.Customer` struct.
+
+  ## Examples
+
+      iex> customer = %AbacatePay.Customer{
+      ...>   id: "cust_aebxkhDZNaMmJeKsy0AHS0FQ",
+      ...>   name: "Daniel Lima",
+      ...>   cellphone: "(11) 4002-8922",
+      ...>   email: "daniel_lima@abacatepay.com",
+      ...>   tax_id: "123.456.789-01"
+      ...> }
+      iex> AbacatePay.Customer.build_api_customer(customer)
+      {:ok, %{
+        id: "cust_aebxkhDZNaMmJeKsy0AHS0FQ",
+        metadata: %{
+          name: "Daniel Lima",
+          cellphone: "(11) 4002-8922",
+          taxId: "123.456.789-01",
+          email: "daniel_lima@abacatepay.com"
+        }
+      }}
+  """
+  @spec build_api_customer(pretty_customer :: t()) :: {:ok, map()}
+  def build_api_customer(pretty_customer) do
+    api_fields = %{
+      id: Map.get(pretty_customer, "id"),
+      metadata: %{
+        name: Map.get(pretty_customer, "name"),
+        cellphone: Map.get(pretty_customer, "cellphone"),
+        taxId: Map.get(pretty_customer, "tax_id"),
+        email: Map.get(pretty_customer, "email")
+      }
+    }
+
+    {:ok, api_fields}
   end
 end
