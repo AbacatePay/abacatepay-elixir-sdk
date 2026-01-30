@@ -1,4 +1,4 @@
-defmodule AbacatePay.ApiClient do
+defmodule AbacatePay.HTTPClient do
   @moduledoc """
   HTTP client for making requests to the AbacatePay API.
   """
