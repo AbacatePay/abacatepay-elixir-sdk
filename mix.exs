@@ -13,10 +13,13 @@ defmodule AbacatePay.MixProject do
       version: @version,
       elixir: "~> 1.14",
       description: @description,
+      package: package(),
+      docs: docs(),
       start_permanent: Mix.env() == :prod,
       name: @name,
       source_url: @source_url,
-      deps: deps()
+      deps: deps(),
+      dialyzer: dialyxir()
     ]
   end
 
@@ -33,7 +36,31 @@ defmodule AbacatePay.MixProject do
     [
       {:jason, "~> 1.4"},
       {:finch, "~> 0.21.0"},
+      {:dialyxir, "~> 1.4.7", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.0", only: :dev, runtime: false}
+    ]
+  end
+
+  defp package do
+    [
+      files: ["lib", "LICENSE", "mix.exs"],
+      licenses: ["MIT"],
+      links: %{"GitHub" => @source_url, "AbacatePay" => "https://www.abacatepay.com"}
+    ]
+  end
+
+  defp docs do
+    [
+      source_ref: "v#{@version}",
+      source_url: @source_url,
+      main: @name
+    ]
+  end
+
+  defp dialyxir do
+    [
+      plt_local_path: "priv/plts/project",
+      plt_core_path: "priv/plts/core"
     ]
   end
 end

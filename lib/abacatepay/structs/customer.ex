@@ -1,4 +1,8 @@
 defmodule AbacatePay.Customer do
+  @moduledoc ~S"""
+  Estrutura que representa um cliente na AbacatePay.
+  """
+
   alias AbacatePay.Api
 
   defstruct [
@@ -6,8 +10,17 @@ defmodule AbacatePay.Customer do
     :metadata
   ]
 
+  @typedoc "Id único do cliente na AbacatePay."
   @type id :: String.t()
 
+  @typedoc """
+  Dados do cliente.
+
+  - `:name` - Nome do cliente
+  - `:cellphone` - Telefone do cliente
+  - `:tax_id` - Documento válido do cliente, podendo ser CPF ou CNPJ
+  - `:email` - E-mail do cliente
+  """
   @type metadata :: %{
           name: String.t() | nil,
           cellphone: String.t() | nil,
@@ -20,6 +33,22 @@ defmodule AbacatePay.Customer do
           metadata: metadata
         }
 
+  @doc """
+  Permite que você crie um novo cliente para a sua loja.
+
+  ## Exemplos
+
+      iex> customer = %AbacatePay.Customer{
+      ...>   metadata: %{
+      ...>     name: "Daniel Lima",
+      ...>     cellphone: "(11) 4002-8922",
+      ...>     email: "daniel_lima@abacatepay.com",
+      ...>     tax_id: "123.456.789-01"
+      ...>   }
+      ...> }
+      iex> AbacatePay.Customer.create(customer)
+      {:ok, %AbacatePay.Customer{id: "cust_aebxkhDZNaMmJeKsy0AHS0FQ", metadata: %{...}}}
+  """
   def create(%__MODULE__{metadata: metadata}) do
     customer = build_api_customer(%__MODULE__{metadata: metadata})
 
@@ -32,7 +61,15 @@ defmodule AbacatePay.Customer do
     end
   end
 
-  def list() do
+  @doc """
+  Permite que você recupere uma lista de todos os seus clientes.
+
+  ## Exemplos
+
+      iex> AbacatePay.Customer.list()
+      {:ok, [%AbacatePay.Customer{id: "cust_aebxkhDZNaMmJeKsy0AHS0FQ", metadata: %{...}}, ...]}
+  """
+  def list do
     case Api.Customer.list_customers() do
       {:ok, data_list} ->
         data_list
