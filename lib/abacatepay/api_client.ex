@@ -1,0 +1,132 @@
+defmodule AbacatePay.ApiClient do
+  @moduledoc """
+  HTTP client for making requests to the AbacatePay API.
+  """
+
+  @base_url Application.compile_env(:abacatepay, :api_base_url, "https://api.abacatepay.com/v1")
+  @user_agent "Elixir-SDK (#{Mix.Project.config()[:source_url]}, #{Mix.Project.config()[:version]})"
+  @api_key Application.compile_env(:abacatepay, :api_key, nil)
+
+  @doc """
+  Performs a GET request to the API.
+
+  ## Examples
+
+      iex> AbacatePay.Api.get("/customers/list")
+      {:ok, [%{...}, ...]}
+  """
+  def get(path) do
+    path
+    |> build_request(:get)
+    |> Finch.request(AbacatePay.Finch)
+    |> case do
+      {:ok, %Finch.Response{body: body, status: status}} ->
+        parse_response({:ok, %Finch.Response{body: body, status: status}})
+
+      other ->
+        other
+    end
+  end
+
+  @doc """
+  Performs a POST request to the API.
+
+  ## Examples
+
+      iex> AbacatePay.Api.post("/customers/create", %{name: "Daniel Lima", cellphone: "(11) 4002-8922", email: "daniel_lima@abacatepay.com", taxId: "123.456.789-01"})
+      {:ok, %{...}}
+  """
+  def post(path, body) do
+    path
+    |> build_request(:post, body)
+    |> Finch.request(AbacatePay.Finch)
+    |> case do
+      {:ok, %Finch.Response{body: body, status: status}} ->
+        parse_response({:ok, %Finch.Response{body: body, status: status}})
+
+      other ->
+        other
+    end
+  end
+
+  @doc """
+  Performs a PUT request to the API.
+  """
+  def put(path, body) do
+    path
+    |> build_request(:put, body)
+    |> Finch.request(AbacatePay.Finch)
+    |> case do
+      {:ok, %Finch.Response{body: body, status: status}} ->
+        parse_response({:ok, %Finch.Response{body: body, status: status}})
+
+      other ->
+        other
+    end
+  end
+
+  @doc """
+  Performs a DELETE request to the API.
+  """
+  def delete(path) do
+    path
+    |> build_request(:delete)
+    |> Finch.request(AbacatePay.Finch)
+    |> case do
+      {:ok, %Finch.Response{body: body, status: status}} ->
+        parse_response({:ok, %Finch.Response{body: body, status: status}})
+
+      other ->
+        other
+    end
+  end
+
+  @doc false
+  defp parse_response({:ok, %Finch.Response{body: body, status: status}}) do
+    case Jason.decode(body) do
+      {:ok, decoded} ->
+        case decoded do
+          %{"data" => data} when data != nil ->
+            {:ok, data}
+
+          %{"error" => _} = error when error != nil ->
+            {:error, %AbacatePay.ApiError{status_code: status, message: error["error"]}}
+
+          _ ->
+            {:error,
+             %AbacatePay.ApiError{status_code: 500, message: "Unexpected response format"}}
+        end
+
+      {:error, %Jason.DecodeError{data: error_message}} ->
+        {:error, %AbacatePay.ApiError{status_code: status, message: error_message}}
+    end
+  end
+
+  @doc false
+  defp build_request(path, method) do
+    url = @base_url <> path
+
+    headers = [
+      {"Content-Type", "application/json"},
+      {"Accept", "application/json"},
+      {"User-Agent", @user_agent},
+      {"Authorization", "Bearer #{@api_key}"}
+    ]
+
+    Finch.build(method, url, headers)
+  end
+
+  @doc false
+  defp build_request(path, method, body) do
+    url = @base_url <> path
+
+    headers = [
+      {"Content-Type", "application/json"},
+      {"Accept", "application/json"},
+      {"User-Agent", @user_agent},
+      {"Authorization", "Bearer #{@api_key}"}
+    ]
+
+    Finch.build(method, url, headers, Jason.encode!(body))
+  end
+end

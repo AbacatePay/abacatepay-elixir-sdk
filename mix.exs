@@ -20,16 +20,19 @@ defmodule AbacatePay.MixProject do
     ]
   end
 
+  # Run "mix help compile.app" to learn about applications.
   def application do
     [
+      mod: {AbacatePay.Application, []},
       extra_applications: [:logger]
     ]
   end
 
+  # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
       {:jason, "~> 1.4"},
-      {:httpoison, "~> 2.3"},
+      {:finch, "~> 0.21.0"},
       {:ex_doc, "~> 0.40.0", only: :dev, runtime: false}
     ]
   end

@@ -26,14 +26,14 @@ defmodule Abacatepay.Customer do
   @spec create(Client.t(), Customer.metadata()) :: Customer.response()
   def create(client, params) do
     case Client.post(client, "/customer/create", Jason.encode!(params)) do
-      { :ok, %{ status_code: 200, body: body } } ->
-        { :ok, struct(Customer, body) }
+      {:ok, %{status_code: 200, body: body}} ->
+        {:ok, struct(Customer, body)}
 
-      { :ok, %{ status_code: _, body: %{"error" => error} } } ->
-        { :error, error }
+      {:ok, %{status_code: _, body: %{"error" => error}}} ->
+        {:error, error}
 
-      { :error, error } ->
-        { :error, error.reason }
+      {:error, error} ->
+        {:error, error.reason}
     end
   end
 
@@ -43,14 +43,14 @@ defmodule Abacatepay.Customer do
   @spec list(Client.t()) :: Customer.list_response()
   def list(client) do
     case Client.get(client, "/customer/list") do
-      { :ok, %{ status_code: 200, body: %{"data" => data} } } ->
-        { :ok, Enum.map(data, &struct(Customer, &1)) }
+      {:ok, %{status_code: 200, body: %{"data" => data}}} ->
+        {:ok, Enum.map(data, &struct(Customer, &1))}
 
-      { :ok, %{ status_code: _, body: %{"error" => error} } } ->
-        { :error, error }
+      {:ok, %{status_code: _, body: %{"error" => error}}} ->
+        {:error, error}
 
-      { :error, error } ->
-        { :error, error.reason }
+      {:error, error} ->
+        {:error, error.reason}
     end
   end
 end
