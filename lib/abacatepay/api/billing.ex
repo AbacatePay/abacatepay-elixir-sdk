@@ -14,7 +14,7 @@ defmodule AbacatePay.Api.Billing do
   def create_billing(body) do
     AbacatePay.HTTPClient.post(
       "/billing/create",
-      Jason.encode!(body)
+      body
     )
   end
 
