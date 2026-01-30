@@ -20,4 +20,7 @@ erl_crash.dump
 *.ez
 
 # Ignore package tarball (built via "mix hex.build").
-abacatepay-*.tar 
+abacatepay-*.tar
+
+# VSCode Elixir LS Extension
+.elixir_ls/
