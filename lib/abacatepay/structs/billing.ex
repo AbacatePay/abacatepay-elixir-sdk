@@ -19,6 +19,7 @@ defmodule AbacatePay.Billing do
     :allow_coupons,
     :coupons,
     :created_at,
+    :external_id,
     :updated_at
   ]
 
@@ -139,6 +140,7 @@ defmodule AbacatePay.Billing do
         metadata: metadata,
         customer: customer,
         allow_coupons: allow_coupons,
+        external_id: external_id,
         coupons: coupons
       }) do
     parsed_frequency =
@@ -184,7 +186,8 @@ defmodule AbacatePay.Billing do
         customer: parsed_customer,
         customerId: parsed_customer_id,
         allowCoupons: allow_coupons,
-        coupons: coupons
+        coupons: coupons,
+        externalId: external_id
       }
       |> Enum.reject(fn {_k, v} -> is_nil(v) end)
       |> Enum.into(%{})
@@ -264,19 +267,19 @@ defmodule AbacatePay.Billing do
       frequency:
         Map.get(raw_data, "frequency")
         |> Macro.underscore()
-        |> String.to_atom(),
+        |> String.to_existing_atom(),
       url: Map.get(raw_data, "url"),
       status:
         Map.get(raw_data, "status")
         |> Macro.underscore()
-        |> String.to_atom(),
+        |> String.to_existing_atom(),
       dev_mode: Map.get(raw_data, "devMode"),
       methods:
         Map.get(raw_data, "methods")
         |> Enum.map(fn method ->
           method
           |> Macro.underscore()
-          |> String.to_atom()
+          |> String.to_existing_atom()
         end),
       products:
         Map.get(raw_data, "products")

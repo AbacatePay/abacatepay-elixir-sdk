@@ -11,6 +11,7 @@ defmodule AbacatePay.Api.Store do
       iex> AbacatePay.Api.Store.get_store()
       {:ok, %{...}}
   """
+  @spec get_store() :: {:ok, map()} | {:error, any()}
   def get_store do
     AbacatePay.HTTPClient.get("/store/get")
   end

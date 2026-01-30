@@ -123,6 +123,29 @@ defmodule AbacatePay.Coupon do
   end
 
   @doc """
+  Lists all coupons.
+
+  ## Examples
+
+      iex> AbacatePay.Coupon.list()
+      [
+        %AbacatePay.Coupon{...},
+        %AbacatePay.Coupon{...}
+      ]
+  """
+  def list do
+    case Api.Coupon.list_coupons() do
+      {:ok, data_list} ->
+        data_list
+        |> Enum.map(&build_pretty_coupon/1)
+        |> Enum.map(fn {:ok, coupon} -> coupon end)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
   Builds a pretty coupon struct from raw API data.
 
   ## Examples
@@ -160,14 +183,14 @@ defmodule AbacatePay.Coupon do
       discount_kind:
         Map.get(raw_data, "discountKind")
         |> Macro.underscore()
-        |> String.to_atom(),
+        |> String.to_existing_atom(),
       discount: Map.get(raw_data, "discount"),
       max_redeems: Map.get(raw_data, "maxRedeems"),
       redeems_count: Map.get(raw_data, "redeemsCount"),
       status:
         Map.get(raw_data, "status")
         |> Macro.underscore()
-        |> String.to_atom(),
+        |> String.to_existing_atom(),
       dev_mode: Map.get(raw_data, "devMode"),
       notes: Map.get(raw_data, "notes"),
       created_at: Map.get(raw_data, "createdAt"),
