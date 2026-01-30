@@ -50,6 +50,7 @@ defmodule AbacatePay.Customer do
       iex> AbacatePay.Customer.create(customer)
       {:ok, %AbacatePay.Customer{id: "cust_aebxkhDZNaMmJeKsy0AHS0FQ", name: "Daniel Lima", ...}}
   """
+  @spec create(customer :: t()) :: {:ok, t()} | {:error, any()}
   def create(%__MODULE__{name: name, cellphone: cellphone, email: email, tax_id: tax_id}) do
     case Api.Customer.create_customer(%{
            name: name,
@@ -73,6 +74,7 @@ defmodule AbacatePay.Customer do
       iex> AbacatePay.Customer.list()
       {:ok, [%AbacatePay.Customer{id: "cust_aebxkhDZNaMmJeKsy0AHS0FQ", ...}, ...]}
   """
+  @spec list() :: {:ok, [t()]} | {:error, any()}
   def list do
     case Api.Customer.list_customers() do
       {:ok, data_list} ->
@@ -141,12 +143,12 @@ defmodule AbacatePay.Customer do
   @spec build_api_customer(pretty_customer :: t()) :: {:ok, map()}
   def build_api_customer(pretty_customer) do
     api_fields = %{
-      id: Map.get(pretty_customer, "id"),
+      id: pretty_customer.id,
       metadata: %{
-        name: Map.get(pretty_customer, "name"),
-        cellphone: Map.get(pretty_customer, "cellphone"),
-        taxId: Map.get(pretty_customer, "tax_id"),
-        email: Map.get(pretty_customer, "email")
+        name: pretty_customer.name,
+        cellphone: pretty_customer.cellphone,
+        taxId: pretty_customer.tax_id,
+        email: pretty_customer.email
       }
     }
 

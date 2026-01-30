@@ -5,7 +5,7 @@ defmodule AbacatePay.HTTPClient do
 
   @base_url Application.compile_env(:abacatepay, :api_base_url, "https://api.abacatepay.com/v1")
   @user_agent "Elixir-SDK (#{Mix.Project.config()[:source_url]}, #{Mix.Project.config()[:version]})"
-  @api_key Application.compile_env(:abacatepay, :api_key, nil)
+  @api_key "abc_dev_PWxm5GHSURzeerQmDKfu6Mnn"
 
   @doc """
   Performs a GET request to the API.

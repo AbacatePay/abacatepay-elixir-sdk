@@ -3,6 +3,8 @@ defmodule AbacatePay.Store do
   Module that represents a store in AbacatePay.
   """
 
+  alias AbacatePay.Api
+
   defstruct [
     :id,
     :name,
@@ -28,6 +30,12 @@ defmodule AbacatePay.Store do
           blocked: non_neg_integer()
         }
 
+  @type t :: %__MODULE__{
+          id: id,
+          name: name,
+          balance: balance
+        }
+
   @doc """
   Allows you to retrieve the details of your account/store, including balance information.
 
@@ -36,6 +44,7 @@ defmodule AbacatePay.Store do
       iex> AbacatePay.Store.get()
       {:ok, %AbacatePay.Store{id: "store_ABC123", name: "My Store", balance: %{available: 100000, pending: 5000, blocked: 2000}}}
   """
+  @spec get() :: {:ok, t()} | {:error, any()}
   def get do
     case Api.Store.get_store() do
       {:ok, data} ->

@@ -12,6 +12,6 @@ defmodule AbacatePay.Api.Store do
       {:ok, %{...}}
   """
   def get_store do
-    AbacatePay.Api.get("/store/get")
+    AbacatePay.HTTPClient.get("/store/get")
   end
 end

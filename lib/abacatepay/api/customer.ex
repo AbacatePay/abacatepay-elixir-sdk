@@ -8,7 +8,7 @@ defmodule AbacatePay.Api.Customer do
 
   ## Examples
 
-      iex> AbacatePay.HTTPClient.Customer.create_customer(%{name: "Daniel Lima", cellphone: "(11) 4002-8922", email: "daniel.lima@example.com", taxId: "123.456.789-01"})
+      iex> AbacatePay.Api.Customer.create_customer(%{name: "Daniel Lima", cellphone: "(11) 4002-8922", email: "daniel.lima@example.com", taxId: "123.456.789-01"})
       {:ok, %{...}}
   """
   def create_customer(body) do
@@ -23,7 +23,7 @@ defmodule AbacatePay.Api.Customer do
 
   ## Examples
 
-      iex> AbacatePay.HTTPClient.Customer.list_customers()
+      iex> AbacatePay.Api.Customer.list_customers()
       {:ok, [%{...}, ...]}
   """
   def list_customers do

@@ -8,7 +8,7 @@ defmodule AbacatePay.Api.Billing do
 
   ## Examples
 
-      iex> AbacatePay.HTTPClient.Billing.create_billing(%{...})
+      iex> AbacatePay.Api.Billing.create_billing(%{...})
       {:ok, %{...}}
   """
   def create_billing(body) do
@@ -23,7 +23,7 @@ defmodule AbacatePay.Api.Billing do
 
   ## Examples
 
-      iex> AbacatePay.HTTPClient.Billing.list_billings()
+      iex> AbacatePay.Api.Billing.list_billings()
       {:ok, [%{...}, ...]}
   """
   def list_billings do
