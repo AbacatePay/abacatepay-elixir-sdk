@@ -3,9 +3,10 @@ defmodule AbacatePay.HTTPClient do
   HTTP client for making requests to the AbacatePay API.
   """
 
-  @base_url Application.compile_env(:abacatepay, :api_base_url, "https://api.abacatepay.com/v1")
-  @user_agent "Elixir-SDK (#{Mix.Project.config()[:source_url]}, #{Mix.Project.config()[:version]})"
+  @api_url Application.compile_env(:abacatepay, :api_url, "https://api.abacatepay.com")
+  @api_version Application.compile_env(:abacatepay, :api_version, "1")
   @api_key Application.compile_env(:abacatepay, :api_key, nil)
+  @user_agent "Elixir-SDK (#{Mix.Project.config()[:source_url]}, #{Mix.Project.config()[:version]})"
 
   @doc """
   Performs a GET request to the API.
@@ -24,7 +25,7 @@ defmodule AbacatePay.HTTPClient do
         parse_response({:ok, %Finch.Response{body: body, status: status}})
 
       other ->
-        other
+        {:error, other}
     end
   end
 
@@ -45,7 +46,7 @@ defmodule AbacatePay.HTTPClient do
         parse_response({:ok, %Finch.Response{body: body, status: status}})
 
       other ->
-        other
+        {:error, other}
     end
   end
 
@@ -61,7 +62,7 @@ defmodule AbacatePay.HTTPClient do
         parse_response({:ok, %Finch.Response{body: body, status: status}})
 
       other ->
-        other
+        {:error, other}
     end
   end
 
@@ -77,7 +78,7 @@ defmodule AbacatePay.HTTPClient do
         parse_response({:ok, %Finch.Response{body: body, status: status}})
 
       other ->
-        other
+        {:error, other}
     end
   end
 
@@ -104,7 +105,7 @@ defmodule AbacatePay.HTTPClient do
 
   @doc false
   defp build_request(path, method) do
-    url = @base_url <> path
+    url = "#{@api_url}/v#{@api_version}" <> path
 
     headers = [
       {"Content-Type", "application/json"},
@@ -118,7 +119,7 @@ defmodule AbacatePay.HTTPClient do
 
   @doc false
   defp build_request(path, method, body) do
-    url = @base_url <> path
+    url = "#{@api_url}/v#{@api_version}" <> path
 
     headers = [
       {"Content-Type", "application/json"},

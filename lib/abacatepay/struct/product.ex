@@ -11,19 +11,19 @@ defmodule AbacatePay.Product do
     :name
   ]
 
-  @typedoc "The product ID in your application."
+  @typedoc "The product id on your system. We use this id to create your product on AbacatePay automatically, so make sure your id is unique."
   @type external_id :: String.t()
 
-  @typedoc "The number of units of the given product (min: 1)."
+  @typedoc "Quantity of product being purchased."
   @type quantity :: non_neg_integer()
 
-  @typedoc "The price of the product in cents (min: 100)."
+  @typedoc "Price per unit of product in cents. The minimum is 100 (1 BRL)."
   @type price :: non_neg_integer()
 
-  @typedoc "A detailed description of the product."
+  @typedoc "Detailed product description."
   @type description :: String.t()
 
-  @typedoc "The product name."
+  @typedoc "Product name."
   @type name :: String.t()
 
   @type t :: %__MODULE__{
@@ -38,7 +38,6 @@ defmodule AbacatePay.Product do
   Builds a `AbacatePay.Product` struct from raw API data.
 
   ## Examples
-
       iex> raw_data = %{
       ...>   "externalId" => "prod_12345",
       ...>   "quantity" => 2,
@@ -58,11 +57,11 @@ defmodule AbacatePay.Product do
   @spec build_pretty_product(raw_data :: map()) :: {:ok, t()}
   def build_pretty_product(raw_data) do
     pretty_fields = %AbacatePay.Product{
-      external_id: Map.get(raw_data, "externalId"),
-      quantity: Map.get(raw_data, "quantity"),
-      price: Map.get(raw_data, "price"),
-      description: Map.get(raw_data, "description"),
-      name: Map.get(raw_data, "name")
+      external_id: raw_data["externalId"],
+      quantity: raw_data["quantity"],
+      price: raw_data["price"],
+      description: raw_data["description"],
+      name: raw_data["name"]
     }
 
     {:ok, pretty_fields}
@@ -72,7 +71,6 @@ defmodule AbacatePay.Product do
   Builds a map suitable for the API from a `AbacatePay.Product` struct.
 
   ## Examples
-
       iex> product = %AbacatePay.Product{
       ...>   external_id: "prod_12345",
       ...>   quantity: 2,

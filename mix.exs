@@ -4,7 +4,7 @@ defmodule AbacatePay.MixProject do
   @app :abacatepay
   @description "AbacatePay Elixir SDK for you to start receiving payments in seconds"
   @name "AbacatePay"
-  @version "0.1.0"
+  @version "1.0.0"
   @source_url "https://github.com/AbacatePay/abacatepay-elixir-sdk"
 
   def project do
@@ -36,6 +36,7 @@ defmodule AbacatePay.MixProject do
     [
       {:jason, "~> 1.4"},
       {:finch, "~> 0.21.0"},
+      {:nimble_options, "~> 1.1"},
       {:dialyxir, "~> 1.4.7", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.0", only: :dev, runtime: false}
     ]
@@ -43,7 +44,7 @@ defmodule AbacatePay.MixProject do
 
   defp package do
     [
-      files: ["lib", "LICENSE", "mix.exs"],
+      files: ["lib", "mix.exs"],
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url, "AbacatePay" => "https://www.abacatepay.com"}
     ]

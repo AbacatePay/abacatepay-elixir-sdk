@@ -3,8 +3,6 @@ defmodule AbacatePay.Customer do
   Module that represents a customer in AbacatePay.
   """
 
-  alias AbacatePay.Api
-
   defstruct [
     :id,
     :name,
@@ -40,29 +38,34 @@ defmodule AbacatePay.Customer do
   Creates a new customer.
 
   ## Examples
-
-      iex> customer = %AbacatePay.Customer{
-      ...>   name: "Daniel Lima",
-      ...>   cellphone: "(11) 4002-8922",
-      ...>   email: "daniel_lima@abacatepay.com",
-      ...>   tax_id: "123.456.789-01"
-      ...> }
-      iex> AbacatePay.Customer.create(customer)
+      iex> AbacatePay.Customer.create([
+        name: "Daniel Lima",
+        cellphone: "(11) 4002-8922",
+        email: "daniel_lima@abacatepay.com",
+        tax_id: "123.456.789-01"
+      ])
       {:ok, %AbacatePay.Customer{id: "cust_aebxkhDZNaMmJeKsy0AHS0FQ", name: "Daniel Lima", ...}}
-  """
-  @spec create(customer :: t()) :: {:ok, t()} | {:error, any()}
-  def create(%__MODULE__{name: name, cellphone: cellphone, email: email, tax_id: tax_id}) do
-    case Api.Customer.create_customer(%{
-           name: name,
-           cellphone: cellphone,
-           email: email,
-           taxId: tax_id
-         }) do
-      {:ok, data} ->
-        build_pretty_customer(data)
 
-      {:error, reason} ->
-        {:error, reason}
+  Options: \n#{NimbleOptions.docs(AbacatePay.Schema.Customer.create_customer_request())}
+  """
+  @spec create(options :: keyword()) :: {:ok, t()} | {:error, any()}
+  def create(options) do
+    {:ok, validated_options} =
+      NimbleOptions.validate(options, AbacatePay.Schema.Customer.create_customer_request())
+
+    body =
+      %{
+        name: validated_options[:name],
+        cellphone: validated_options[:cellphone],
+        email: validated_options[:email],
+        taxId: validated_options[:tax_id]
+      }
+      |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+      |> Enum.into(%{})
+
+    case AbacatePay.Api.Customer.create_customer(body) do
+      {:ok, response} -> build_pretty_customer(response)
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -70,13 +73,12 @@ defmodule AbacatePay.Customer do
   Gets a list of all customers.
 
   ## Examples
-
       iex> AbacatePay.Customer.list()
       {:ok, [%AbacatePay.Customer{id: "cust_aebxkhDZNaMmJeKsy0AHS0FQ", ...}, ...]}
   """
   @spec list() :: {:ok, [t()]} | {:error, any()}
   def list do
-    case Api.Customer.list_customers() do
+    case AbacatePay.Api.Customer.list_customers() do
       {:ok, data_list} ->
         data_list
         |> Enum.map(&build_pretty_customer/1)
@@ -91,7 +93,6 @@ defmodule AbacatePay.Customer do
   Builds a `AbacatePay.Customer` struct from raw API data.
 
   ## Examples
-
       iex> raw_data = %{
       ...>   "id" => "cust_aebxkhDZNaMmJeKsy0AHS0FQ",
       ...>   "metadata" => %{
@@ -107,7 +108,7 @@ defmodule AbacatePay.Customer do
   @spec build_pretty_customer(raw_data :: map()) :: {:ok, t()}
   def build_pretty_customer(raw_data) do
     pretty_fields = %AbacatePay.Customer{
-      id: Map.get(raw_data, "id"),
+      id: raw_data["id"],
       name: get_in(raw_data, ["metadata", "name"]),
       cellphone: get_in(raw_data, ["metadata", "cellphone"]),
       tax_id: get_in(raw_data, ["metadata", "taxId"]),
@@ -121,7 +122,6 @@ defmodule AbacatePay.Customer do
   Builds a map suitable for the API from a `AbacatePay.Customer` struct.
 
   ## Examples
-
       iex> customer = %AbacatePay.Customer{
       ...>   id: "cust_aebxkhDZNaMmJeKsy0AHS0FQ",
       ...>   name: "Daniel Lima",

@@ -3,8 +3,6 @@ defmodule AbacatePay.Coupon do
   Module that represents a coupon in AbacatePay.
   """
 
-  alias AbacatePay.Api
-
   defstruct [
     :id,
     :discount_kind,
@@ -13,16 +11,17 @@ defmodule AbacatePay.Coupon do
     :redeems_count,
     :status,
     :dev_mode,
+    :metadata,
     :notes,
     :created_at,
     :updated_at
   ]
 
-  @typedoc "The unique identifier for the coupon."
+  @typedoc "Unique coupon code that your customers will use to apply the discount."
   @type id :: String.t()
 
   @typedoc """
-  The type of discount (e.g., percentage or fixed amount).
+  Type of discount applied by the coupon.
 
   - `:percentage` - Percentual discount (e.g. 10% off).
   - `:fixed` - Fixed amount discount (e.g. R$ 5,00 off).
@@ -30,20 +29,20 @@ defmodule AbacatePay.Coupon do
   @type discount_kind :: :percentage | :fixed
 
   @typedoc """
-  The value of the discount.
+  Discount amount.
 
   For :percentage use numbers from 1-100 (e.g. 10 = 10%). For :fixed use the value in cents (e.g. 500 = R$ 5,00)
   """
   @type discount :: float()
 
-  @typedoc "The maximum number of times the coupon can be redeemed."
+  @typedoc "Limit on the number of times the coupon can be used. Use `-1` for unlimited coupons or a specific number to limit usage."
   @type max_redeems :: integer()
 
-  @typedoc "The number of times the coupon has been redeemed."
+  @typedoc "Counter of how many times the coupon has been used by customers."
   @type redeems_count :: non_neg_integer()
 
   @typedoc """
-  The current status of the coupon (e.g., `:active`, `:deleted`, `:disabled`).
+  Coupon status.
 
   - `:active` - The coupon is active and can be used by customers.
   - `:deleted` - The coupon has been removed and can no longer be used.
@@ -51,16 +50,16 @@ defmodule AbacatePay.Coupon do
   """
   @type status :: :active | :deleted | :disabled
 
-  @typedoc "Indicates if the coupon is in development mode."
+  @typedoc "Indicates whether the coupon was created in a development (true) or production (false) environment."
   @type dev_mode :: boolean()
 
-  @typedoc "Coupon's description"
-  @type notes :: String.t()
+  @typedoc "Internal description of the coupon for your organization and control."
+  @type notes :: String.t() | nil
 
-  @typedoc "Timestamp when the coupon was created."
+  @typedoc "Coupon creation date and time."
   @type created_at :: String.t()
 
-  @typedoc "Timestamp when the coupon was last updated."
+  @typedoc "Coupon last updated date and time."
   @type updated_at :: String.t()
 
   @type t :: %__MODULE__{
@@ -80,45 +79,36 @@ defmodule AbacatePay.Coupon do
   Creates a new coupon.
 
   ## Examples
+      iex> AbacatePay.Coupon.create([
+        code: "DEYVIN_20",
+        discount_kind: :percentage,
+        discount: 123,
+        max_redeems: 100
+      ])
+      {:ok, %AbacatePay.Coupon{id: "DEYVIN_20", ...}}
 
-      iex> coupon = %AbacatePay.Coupon{
-      ...>   id: "DEYVIN_20",
-      ...>   discount_kind: :percentage,
-      ...>   discount: 10.0,
-      ...>   notes: "10% off on all products",
-      ...>   max_redeems: 100
-      ...> }
-      iex> AbacatePay.Coupon.create(coupon)
-      {:ok, %AbacatePay.Coupon{...}}
+  Options: \n#{NimbleOptions.docs(AbacatePay.Schema.Coupon.create_coupon_request())}
   """
-  @spec create(coupon :: t()) :: {:ok, t()} | {:error, any()}
-  def create(%__MODULE__{
-        id: id,
-        discount_kind: discount_kind,
-        discount: discount,
-        notes: notes,
-        max_redeems: max_redeems
-      }) do
+  @spec create(options :: keyword()) :: {:ok, t()} | {:error, any()}
+  def create(options) do
+    {:ok, validated_options} =
+      NimbleOptions.validate(options, AbacatePay.Schema.Coupon.create_coupon_request())
+
     body =
       %{
-        code: id,
-        discountKind:
-          discount_kind
-          |> Atom.to_string()
-          |> String.upcase(),
-        discount: discount,
-        notes: notes,
-        maxRedeems: max_redeems
+        code: validated_options[:code],
+        discountKind: AbacatePay.Util.normalize_atom(validated_options[:discount_kind]),
+        discount: validated_options[:discount],
+        notes: validated_options[:notes],
+        maxRedeems: validated_options[:max_redeems],
+        metadata: validated_options[:metadata]
       }
       |> Enum.reject(fn {_k, v} -> is_nil(v) end)
       |> Enum.into(%{})
 
-    case Api.Coupon.create_coupon(body) do
-      {:ok, data} ->
-        build_pretty_coupon(data)
-
-      {:error, reason} ->
-        {:error, reason}
+    case AbacatePay.Api.Coupon.create_coupon(body) do
+      {:ok, response} -> build_pretty_coupon(response)
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -126,7 +116,6 @@ defmodule AbacatePay.Coupon do
   Lists all coupons.
 
   ## Examples
-
       iex> AbacatePay.Coupon.list()
       [
         %AbacatePay.Coupon{...},
@@ -134,7 +123,7 @@ defmodule AbacatePay.Coupon do
       ]
   """
   def list do
-    case Api.Coupon.list_coupons() do
+    case AbacatePay.Api.Coupon.list_coupons() do
       {:ok, data_list} ->
         data_list
         |> Enum.map(&build_pretty_coupon/1)
@@ -149,7 +138,6 @@ defmodule AbacatePay.Coupon do
   Builds a pretty coupon struct from raw API data.
 
   ## Examples
-
       iex> raw_data = %{
       ...>   "id" => "coupon_123",
       ...>   "discountKind" => "PERCENTAGE",
@@ -172,29 +160,35 @@ defmodule AbacatePay.Coupon do
         status: :active,
         dev_mode: false,
         notes: "10% off on all products",
-        created_at: "2026-01-01T00:00:00Z",
-        updated_at: "2026-01-10T00:00:00Z"
+        created_at: ~U[2026-01-01T00:00:00Z],
+        updated_at: ~U[2026-01-10T00:00:00Z]
       }}
   """
   @spec build_pretty_coupon(raw_data :: map()) :: {:ok, t()}
   def build_pretty_coupon(raw_data) do
+    created_at =
+      case raw_data["createdAt"] do
+        nil -> nil
+        datetime_str -> DateTime.from_iso8601(datetime_str) |> elem(1)
+      end
+
+    updated_at =
+      case raw_data["updatedAt"] do
+        nil -> nil
+        datetime_str -> DateTime.from_iso8601(datetime_str) |> elem(1)
+      end
+
     pretty_fields = %AbacatePay.Coupon{
-      id: Map.get(raw_data, "id"),
-      discount_kind:
-        Map.get(raw_data, "discountKind")
-        |> Macro.underscore()
-        |> String.to_existing_atom(),
-      discount: Map.get(raw_data, "discount"),
-      max_redeems: Map.get(raw_data, "maxRedeems"),
-      redeems_count: Map.get(raw_data, "redeemsCount"),
-      status:
-        Map.get(raw_data, "status")
-        |> Macro.underscore()
-        |> String.to_existing_atom(),
-      dev_mode: Map.get(raw_data, "devMode"),
-      notes: Map.get(raw_data, "notes"),
-      created_at: Map.get(raw_data, "createdAt"),
-      updated_at: Map.get(raw_data, "updatedAt")
+      id: raw_data["id"],
+      discount_kind: AbacatePay.Util.atomize_enum(raw_data["discountKind"]),
+      discount: raw_data["discount"],
+      max_redeems: raw_data["maxRedeems"],
+      redeems_count: raw_data["redeemsCount"],
+      status: AbacatePay.Util.atomize_enum(raw_data["status"]),
+      dev_mode: raw_data["devMode"],
+      notes: raw_data["notes"],
+      created_at: created_at,
+      updated_at: updated_at
     }
 
     {:ok, pretty_fields}
@@ -204,7 +198,6 @@ defmodule AbacatePay.Coupon do
   Builds a map suitable for the API from a `AbacatePay.Coupon` struct
 
   ## Examples
-
       iex> coupon = %AbacatePay.Coupon{
       ...>   id: "coupon_123",
       ...>   discount_kind: :percentage,
@@ -214,8 +207,8 @@ defmodule AbacatePay.Coupon do
       ...>   status: :active,
       ...>   dev_mode: false,
       ...>   notes: "10% off on all products",
-      ...>   created_at: "2026-01-01T00:00:00Z",
-      ...>   updated_at: "2026-01-10T00:00:00Z"
+      ...>   created_at: ~U[2026-01-01T00:00:00Z],
+      ...>   updated_at: ~U[2026-01-10T00:00:00Z]
       ...> }
       iex> AbacatePay.Coupon.build_api_coupon(coupon)
       {:ok, %{
@@ -225,25 +218,35 @@ defmodule AbacatePay.Coupon do
         maxRedeems: 100,
         status: "ACTIVE",
         devMode: false,
-        notes: "10% off on all products"
+        notes: "10% off on all products",
+        createdAt: "2026-01-01T00:00:00Z",
+        updatedAt: "2026-01-10T00:00:00Z"
       }}
   """
   @spec build_api_coupon(pretty_coupon :: t()) :: {:ok, map()}
   def build_api_coupon(pretty_coupon) do
+    created_at =
+      case pretty_coupon.created_at do
+        nil -> nil
+        datetime -> DateTime.to_iso8601(datetime)
+      end
+
+    updated_at =
+      case pretty_coupon.updated_at do
+        nil -> nil
+        datetime -> DateTime.to_iso8601(datetime)
+      end
+
     api_fields = %{
       id: pretty_coupon.id,
-      discountKind:
-        pretty_coupon.discount_kind
-        |> Atom.to_string()
-        |> String.upcase(),
+      discountKind: AbacatePay.Util.normalize_atom(pretty_coupon.discount_kind),
       discount: pretty_coupon.discount,
       maxRedeems: pretty_coupon.max_redeems,
-      status:
-        pretty_coupon.status
-        |> Atom.to_string()
-        |> String.upcase(),
+      status: AbacatePay.Util.normalize_atom(pretty_coupon.status),
       devMode: pretty_coupon.dev_mode,
-      notes: pretty_coupon.notes
+      notes: pretty_coupon.notes,
+      createdAt: created_at,
+      updatedAt: updated_at
     }
 
     {:ok, api_fields}

@@ -11,7 +11,7 @@ defmodule AbacatePay.Api.Billing do
       iex> AbacatePay.Api.Billing.create_billing(%{...})
       {:ok, %{...}}
   """
-  @spec create_billing(body :: map()) :: {:ok, map()} | {:error, any()}
+  @spec create_billing(body :: map()) :: {:ok, map()} | {:error, AbacatePay.ApiError.t()}
   def create_billing(body) do
     AbacatePay.HTTPClient.post(
       "/billing/create",
@@ -27,7 +27,7 @@ defmodule AbacatePay.Api.Billing do
       iex> AbacatePay.Api.Billing.list_billings()
       {:ok, [%{...}, ...]}
   """
-  @spec list_billings() :: {:ok, list(map())} | {:error, any()}
+  @spec list_billings() :: {:ok, list(map())} | {:error, AbacatePay.ApiError.t()}
   def list_billings do
     AbacatePay.HTTPClient.get("/billing/list")
   end

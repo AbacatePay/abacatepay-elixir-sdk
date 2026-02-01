@@ -3,26 +3,26 @@ defmodule AbacatePay.Store do
   Module that represents a store in AbacatePay.
   """
 
-  alias AbacatePay.Api
-
   defstruct [
     :id,
     :name,
     :balance
   ]
 
-  @typedoc "The store unique ID in AbacatePay."
+  @typedoc "Unique identifier for your store on AbacatePay."
   @type id :: String.t()
 
-  @typedoc "The store name."
+  @typedoc "Name of your store/company."
   @type name :: String.t()
 
   @typedoc """
   Object containing information about your account balances.
 
-  - `:available` - Available balance for withdrawal in cents.
-  - `:pending` - Pending balance awaiting confirmation in cents.
-  - `:blocked` - Balance blocked in disputes in cents.
+  ## All balance values ​​are returned in cents. To convert to Reais, divide by 100. For example: 15000 cents = R$150.00
+
+  - `available` - Balance available for withdrawal in cents.
+  - `pending` - Balance pending confirmation in cents.
+  - `blocked` - Balance blocked in disputes in cents. The blocked balance represents amounts that are in dispute or under review. These amounts are not available for withdrawal until the situation is resolved.
   """
   @type balance :: %{
           available: non_neg_integer(),
@@ -40,18 +40,14 @@ defmodule AbacatePay.Store do
   Allows you to retrieve the details of your account/store, including balance information.
 
   ## Examples
-
       iex> AbacatePay.Store.get()
       {:ok, %AbacatePay.Store{id: "store_ABC123", name: "My Store", balance: %{available: 100000, pending: 5000, blocked: 2000}}}
   """
   @spec get() :: {:ok, t()} | {:error, any()}
   def get do
-    case Api.Store.get_store() do
-      {:ok, data} ->
-        build_pretty_store(data)
-
-      {:error, reason} ->
-        {:error, reason}
+    case AbacatePay.Api.Store.get_store() do
+      {:ok, response} -> build_pretty_store(response)
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -59,7 +55,6 @@ defmodule AbacatePay.Store do
   Builds a `AbacatePay.Store` struct from raw API data.
 
   ## Examples
-
       iex> raw_data = %{
       ...>   "id" => "store_ABC123",
       ...>   "name" => "My Store",
@@ -83,8 +78,8 @@ defmodule AbacatePay.Store do
   @spec build_pretty_store(raw_data :: map()) :: {:ok, t()}
   def build_pretty_store(raw_data) do
     pretty_fields = %AbacatePay.Store{
-      id: Map.get(raw_data, "id"),
-      name: Map.get(raw_data, "name"),
+      id: raw_data["id"],
+      name: raw_data["name"],
       balance: %{
         available: get_in(raw_data, ["balance", "available"]),
         pending: get_in(raw_data, ["balance", "pending"]),
@@ -99,7 +94,6 @@ defmodule AbacatePay.Store do
   Builds a map suitable for the API from a `AbacatePay.Store` struct.
 
   ## Examples
-
       iex> store = %AbacatePay.Store{
       ...>   id: "store_ABC123",
       ...>   name: "My Store",
