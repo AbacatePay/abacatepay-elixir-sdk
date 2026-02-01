@@ -2,6 +2,7 @@ defmodule AbacatePay.PublicMRR do
   @moduledoc ~S"""
   Module that represents a Public MRR in AbacatePay.
   """
+  alias AbacatePay.Api
 
   defstruct [
     :mrr,
@@ -36,7 +37,7 @@ defmodule AbacatePay.PublicMRR do
   @type transactions_per_day :: map()
 
   @typedoc "Store creation date."
-  @type created_at :: String.t() | nil
+  @type created_at :: DateTime.t() | nil
 
   @type t :: %__MODULE__{
           mrr: mrr,
@@ -58,9 +59,8 @@ defmodule AbacatePay.PublicMRR do
   """
   @spec get() :: {:ok, t()} | {:error, any()}
   def get do
-    case AbacatePay.Api.PublicMRR.get_mrr() do
-      {:ok, response} -> build_pretty_public_mrr(response)
-      {:error, reason} -> {:error, reason}
+    with {:ok, response} <- Api.PublicMRR.get_mrr() do
+      build_pretty_public_mrr(response)
     end
   end
 
@@ -73,9 +73,8 @@ defmodule AbacatePay.PublicMRR do
   """
   @spec get_merchant_info() :: {:ok, t()} | {:error, any()}
   def get_merchant_info do
-    case AbacatePay.Api.PublicMRR.get_merchant_info() do
-      {:ok, response} -> build_pretty_public_mrr(response)
-      {:error, reason} -> {:error, reason}
+    with {:ok, response} <- Api.PublicMRR.get_merchant_info() do
+      build_pretty_public_mrr(response)
     end
   end
 
@@ -87,9 +86,8 @@ defmodule AbacatePay.PublicMRR do
       {:ok, %AbacatePay.PublicMRR{total_revenue: 150000, total_transactions: 45, transactions_per_day: %{"2024-01-15" => %{amount: 5000, count: 3}, "2024-01-16" => %{amount: 3000, count: 2}}}}
   """
   def get_revenue(start_date, end_date) do
-    case AbacatePay.Api.PublicMRR.get_revenue(start_date, end_date) do
-      {:ok, response} -> build_pretty_public_mrr(response)
-      {:error, reason} -> {:error, reason}
+    with {:ok, response} <- Api.PublicMRR.get_revenue(start_date, end_date) do
+      build_pretty_public_mrr(response)
     end
   end
 

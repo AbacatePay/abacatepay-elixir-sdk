@@ -107,12 +107,12 @@ defmodule AbacatePay.HTTPClient do
   defp build_request(path, method) do
     url = "#{@api_url}/v#{@api_version}" <> path
 
-    headers = [
-      {"Content-Type", "application/json"},
-      {"Accept", "application/json"},
-      {"User-Agent", @user_agent},
-      {"Authorization", "Bearer #{@api_key}"}
-    ]
+    headers =
+      [
+        {"Content-Type", "application/json"},
+        {"Accept", "application/json"},
+        {"User-Agent", @user_agent}
+      ] ++ if @api_key, do: [{"Authorization", "Bearer #{@api_key}"}], else: []
 
     Finch.build(method, url, headers)
   end
@@ -121,12 +121,12 @@ defmodule AbacatePay.HTTPClient do
   defp build_request(path, method, body) do
     url = "#{@api_url}/v#{@api_version}" <> path
 
-    headers = [
-      {"Content-Type", "application/json"},
-      {"Accept", "application/json"},
-      {"User-Agent", @user_agent},
-      {"Authorization", "Bearer #{@api_key}"}
-    ]
+    headers =
+      [
+        {"Content-Type", "application/json"},
+        {"Accept", "application/json"},
+        {"User-Agent", @user_agent}
+      ] ++ if @api_key, do: [{"Authorization", "Bearer #{@api_key}"}], else: []
 
     Finch.build(method, url, headers, Jason.encode!(body))
   end

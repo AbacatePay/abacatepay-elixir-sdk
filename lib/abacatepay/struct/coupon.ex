@@ -3,6 +3,8 @@ defmodule AbacatePay.Coupon do
   Module that represents a coupon in AbacatePay.
   """
 
+  alias AbacatePay.{Api, Schema, Util}
+
   defstruct [
     :id,
     :discount_kind,
@@ -57,10 +59,10 @@ defmodule AbacatePay.Coupon do
   @type notes :: String.t() | nil
 
   @typedoc "Coupon creation date and time."
-  @type created_at :: String.t()
+  @type created_at :: DateTime.t()
 
   @typedoc "Coupon last updated date and time."
-  @type updated_at :: String.t()
+  @type updated_at :: DateTime.t()
 
   @type t :: %__MODULE__{
           id: id,
@@ -87,17 +89,17 @@ defmodule AbacatePay.Coupon do
       ])
       {:ok, %AbacatePay.Coupon{id: "DEYVIN_20", ...}}
 
-  Options: \n#{NimbleOptions.docs(AbacatePay.Schema.Coupon.create_coupon_request())}
+  Options: \n#{NimbleOptions.docs(Schema.Coupon.create_coupon_request())}
   """
   @spec create(options :: keyword()) :: {:ok, t()} | {:error, any()}
   def create(options) do
     {:ok, validated_options} =
-      NimbleOptions.validate(options, AbacatePay.Schema.Coupon.create_coupon_request())
+      NimbleOptions.validate(options, Schema.Coupon.create_coupon_request())
 
     body =
       %{
         code: validated_options[:code],
-        discountKind: AbacatePay.Util.normalize_atom(validated_options[:discount_kind]),
+        discountKind: Util.normalize_atom(validated_options[:discount_kind]),
         discount: validated_options[:discount],
         notes: validated_options[:notes],
         maxRedeems: validated_options[:max_redeems],
@@ -106,9 +108,8 @@ defmodule AbacatePay.Coupon do
       |> Enum.reject(fn {_k, v} -> is_nil(v) end)
       |> Enum.into(%{})
 
-    case AbacatePay.Api.Coupon.create_coupon(body) do
-      {:ok, response} -> build_pretty_coupon(response)
-      {:error, reason} -> {:error, reason}
+    with {:ok, response} <- Api.Coupon.create_coupon(body) do
+      build_pretty_coupon(response)
     end
   end
 
@@ -123,14 +124,13 @@ defmodule AbacatePay.Coupon do
       ]
   """
   def list do
-    case AbacatePay.Api.Coupon.list_coupons() do
-      {:ok, data_list} ->
+    with {:ok, data_list} <- Api.Coupon.list_coupons() do
+      pretty_coupons =
         data_list
         |> Enum.map(&build_pretty_coupon/1)
         |> Enum.map(fn {:ok, coupon} -> coupon end)
 
-      {:error, reason} ->
-        {:error, reason}
+      {:ok, pretty_coupons}
     end
   end
 
@@ -180,11 +180,11 @@ defmodule AbacatePay.Coupon do
 
     pretty_fields = %AbacatePay.Coupon{
       id: raw_data["id"],
-      discount_kind: AbacatePay.Util.atomize_enum(raw_data["discountKind"]),
+      discount_kind: Util.atomize_enum(raw_data["discountKind"]),
       discount: raw_data["discount"],
       max_redeems: raw_data["maxRedeems"],
       redeems_count: raw_data["redeemsCount"],
-      status: AbacatePay.Util.atomize_enum(raw_data["status"]),
+      status: Util.atomize_enum(raw_data["status"]),
       dev_mode: raw_data["devMode"],
       notes: raw_data["notes"],
       created_at: created_at,
@@ -239,10 +239,10 @@ defmodule AbacatePay.Coupon do
 
     api_fields = %{
       id: pretty_coupon.id,
-      discountKind: AbacatePay.Util.normalize_atom(pretty_coupon.discount_kind),
+      discountKind: Util.normalize_atom(pretty_coupon.discount_kind),
       discount: pretty_coupon.discount,
       maxRedeems: pretty_coupon.max_redeems,
-      status: AbacatePay.Util.normalize_atom(pretty_coupon.status),
+      status: Util.normalize_atom(pretty_coupon.status),
       devMode: pretty_coupon.dev_mode,
       notes: pretty_coupon.notes,
       createdAt: created_at,

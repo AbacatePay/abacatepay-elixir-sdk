@@ -3,6 +3,8 @@ defmodule AbacatePay.Billing do
   Module that represents a billing in AbacatePay.
   """
 
+  alias AbacatePay.{Api, Customer, Product, Schema, Util}
+
   defstruct [
     :id,
     :frequency,
@@ -58,10 +60,10 @@ defmodule AbacatePay.Billing do
   @type methods :: [:pix | :card]
 
   @typedoc "List of products included in the charge."
-  @type products :: [AbacatePay.Product.t()]
+  @type products :: [Product.t()]
 
   @typedoc "Customer you are billing. Optional. See structure reference [here](https://docs.abacatepay.com/pages/payment/client/reference.mdx)."
-  @type customer :: AbacatePay.Customer.t() | nil
+  @type customer :: Customer.t() | nil
 
   @typedoc """
   Object with metadata about the charge.
@@ -86,10 +88,10 @@ defmodule AbacatePay.Billing do
   @type coupons :: [String.t()] | nil
 
   @typedoc "Charge creation date and time."
-  @type created_at :: String.t()
+  @type created_at :: DateTime.t()
 
   @typedoc "Charge last updated date and time."
-  @type updated_at :: String.t()
+  @type updated_at :: DateTime.t()
 
   @type t :: %__MODULE__{
           id: id,
@@ -129,31 +131,31 @@ defmodule AbacatePay.Billing do
       ])
       {:ok, %AbacatePay.Billing{id: "bill_aebxkhDZNaMmJeKsy0AHS0FQ", ...}}
 
-  Options: \n#{NimbleOptions.docs(AbacatePay.Schema.Billing.create_billing_request())}
+  Options: \n#{NimbleOptions.docs(Schema.Billing.create_billing_request())}
   """
   @spec create(options :: keyword()) :: {:ok, t()} | {:error, any()}
   def create(options) do
     {:ok, validated_options} =
-      NimbleOptions.validate(options, AbacatePay.Schema.Billing.create_billing_request())
+      NimbleOptions.validate(options, Schema.Billing.create_billing_request())
 
     parsed_methods =
       validated_options[:methods]
-      |> Enum.map(&AbacatePay.Util.normalize_atom/1)
+      |> Enum.map(&Util.normalize_atom/1)
 
     parsed_products =
       validated_options[:products]
-      |> Enum.map(&AbacatePay.Product.build_api_product/1)
+      |> Enum.map(&Product.build_api_product/1)
       |> Enum.map(fn {:ok, product} -> product end)
 
     parsed_customer_id =
       case validated_options[:customer] do
-        %AbacatePay.Customer{id: id} -> id
+        %Customer{id: id} -> id
         _ -> nil
       end
 
     parsed_customer =
-      with %AbacatePay.Customer{} = customer_struct <- validated_options[:customer],
-           {:ok, customer_map} <- AbacatePay.Customer.build_api_customer(customer_struct) do
+      with %Customer{} = customer_struct <- validated_options[:customer],
+           {:ok, customer_map} <- Customer.build_api_customer(customer_struct) do
         customer_map.metadata
       else
         _ -> nil
@@ -161,7 +163,7 @@ defmodule AbacatePay.Billing do
 
     body =
       %{
-        frequency: AbacatePay.Util.normalize_atom(validated_options[:frequency]),
+        frequency: Util.normalize_atom(validated_options[:frequency]),
         methods: parsed_methods,
         products: parsed_products,
         returnUrl: validated_options[:return_url],
@@ -175,9 +177,8 @@ defmodule AbacatePay.Billing do
       |> Enum.reject(fn {_k, v} -> is_nil(v) end)
       |> Enum.into(%{})
 
-    case AbacatePay.Api.Billing.create_billing(body) do
-      {:ok, response} -> build_pretty_billing(response)
-      {:error, reason} -> {:error, reason}
+    with {:ok, response} <- Api.Billing.create_billing(body) do
+      build_pretty_billing(response)
     end
   end
 
@@ -190,14 +191,13 @@ defmodule AbacatePay.Billing do
   """
   @spec list() :: {:ok, [t()]} | {:error, any()}
   def list do
-    case AbacatePay.Api.Billing.list_billings() do
-      {:ok, data_list} ->
+    with {:ok, data_list} <- Api.Billing.list_billings() do
+      pretty_billings =
         data_list
         |> Enum.map(&build_pretty_billing/1)
         |> Enum.map(fn {:ok, billing} -> billing end)
 
-      {:error, reason} ->
-        {:error, reason}
+      {:ok, pretty_billings}
     end
   end
 
@@ -234,7 +234,7 @@ defmodule AbacatePay.Billing do
 
     pretty_customer =
       with customer_data when is_map(customer_data) <- raw_data["customer"],
-           {:ok, customer_struct} <- AbacatePay.Customer.build_pretty_customer(customer_data) do
+           {:ok, customer_struct} <- Customer.build_pretty_customer(customer_data) do
         customer_struct
       else
         _ -> nil
@@ -242,18 +242,18 @@ defmodule AbacatePay.Billing do
 
     pretty_methods =
       raw_data["methods"]
-      |> Enum.map(&AbacatePay.Util.atomize_enum/1)
+      |> Enum.map(&Util.atomize_enum/1)
 
     pretty_products =
       raw_data["products"]
-      |> Enum.map(&AbacatePay.Product.build_pretty_product/1)
+      |> Enum.map(&Product.build_pretty_product/1)
       |> Enum.map(fn {:ok, product} -> product end)
 
     pretty_fields = %AbacatePay.Billing{
       id: raw_data["id"],
-      frequency: AbacatePay.Util.atomize_enum(raw_data["frequency"]),
+      frequency: Util.atomize_enum(raw_data["frequency"]),
       url: raw_data["url"],
-      status: AbacatePay.Util.atomize_enum(raw_data["status"]),
+      status: Util.atomize_enum(raw_data["status"]),
       dev_mode: raw_data["devMode"],
       methods: pretty_methods,
       products: pretty_products,
@@ -308,8 +308,8 @@ defmodule AbacatePay.Billing do
   @spec build_api_billing(pretty_billing :: t()) :: {:ok, map()}
   def build_api_billing(pretty_billing) do
     api_customer =
-      with %AbacatePay.Customer{} = customer_struct <- pretty_billing.customer,
-           {:ok, customer_map} <- AbacatePay.Customer.build_api_customer(customer_struct) do
+      with %Customer{} = customer_struct <- pretty_billing.customer,
+           {:ok, customer_map} <- Customer.build_api_customer(customer_struct) do
         customer_map
       else
         _ -> nil
@@ -317,12 +317,12 @@ defmodule AbacatePay.Billing do
 
     api_products =
       pretty_billing.products
-      |> Enum.map(&AbacatePay.Product.build_api_product/1)
+      |> Enum.map(&Product.build_api_product/1)
       |> Enum.map(fn {:ok, product} -> product end)
 
     api_methods =
       pretty_billing.methods
-      |> Enum.map(&AbacatePay.Util.normalize_atom/1)
+      |> Enum.map(&Util.normalize_atom/1)
 
     created_at =
       case pretty_billing.created_at do
@@ -337,9 +337,9 @@ defmodule AbacatePay.Billing do
       end
 
     api_fields = %{
-      frequency: AbacatePay.Util.normalize_atom(pretty_billing.frequency),
+      frequency: Util.normalize_atom(pretty_billing.frequency),
       url: pretty_billing.url,
-      status: AbacatePay.Util.normalize_atom(pretty_billing.status),
+      status: Util.normalize_atom(pretty_billing.status),
       devMode: pretty_billing.dev_mode,
       methods: api_methods,
       products: api_products,

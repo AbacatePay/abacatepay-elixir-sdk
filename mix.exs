@@ -34,9 +34,12 @@ defmodule AbacatePay.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:nimble_options, "~> 1.1"},
       {:jason, "~> 1.4"},
       {:finch, "~> 0.21.0"},
-      {:nimble_options, "~> 1.1"},
+
+      # Dev and test dependencies
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4.7", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.40.0", only: :dev, runtime: false}
     ]
@@ -44,9 +47,13 @@ defmodule AbacatePay.MixProject do
 
   defp package do
     [
-      files: ["lib", "mix.exs"],
+      files: ["lib", "LICENSE", "mix.exs", "*.md"],
       licenses: ["MIT"],
-      links: %{"GitHub" => @source_url, "AbacatePay" => "https://www.abacatepay.com"}
+      links: %{
+        "Changelog" => "#{@source_url}/blob/main/CHANGELOG.md",
+        "GitHub" => @source_url,
+        "AbacatePay" => "https://www.abacatepay.com"
+      }
     ]
   end
 
@@ -54,7 +61,32 @@ defmodule AbacatePay.MixProject do
     [
       source_ref: "v#{@version}",
       source_url: @source_url,
-      main: @name
+      main: "readme",
+      docs: [
+        groups_for_modules: [
+          API: [
+            AbacatePay.Api.Billing,
+            AbacatePay.Api.Coupon,
+            AbacatePay.Api.Customer,
+            AbacatePay.Api.Pix,
+            AbacatePay.Api.PublicMRR,
+            AbacatePay.Api.Store,
+            AbacatePay.Api.Withdraw
+          ],
+          HTTP: [AbacatePay.HTTPClient, AbacatePay.ApiError],
+          Resources: [
+            AbacatePay.Billing,
+            AbacatePay.Coupon,
+            AbacatePay.Customer,
+            AbacatePay.Pix,
+            AbacatePay.Product,
+            AbacatePay.PublicMRR,
+            AbacatePay.Store,
+            AbacatePay.Withdraw
+          ],
+          Utilities: [AbacatePay.Util]
+        ]
+      ]
     ]
   end
 

@@ -45,9 +45,8 @@ defmodule AbacatePay.Store do
   """
   @spec get() :: {:ok, t()} | {:error, any()}
   def get do
-    case AbacatePay.Api.Store.get_store() do
-      {:ok, response} -> build_pretty_store(response)
-      {:error, reason} -> {:error, reason}
+    with {:ok, response} <- AbacatePay.Api.Store.get_store() do
+      build_pretty_store(response)
     end
   end
 

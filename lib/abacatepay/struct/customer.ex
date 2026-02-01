@@ -3,6 +3,8 @@ defmodule AbacatePay.Customer do
   Module that represents a customer in AbacatePay.
   """
 
+  alias AbacatePay.{Api, Schema}
+
   defstruct [
     :id,
     :name,
@@ -46,12 +48,12 @@ defmodule AbacatePay.Customer do
       ])
       {:ok, %AbacatePay.Customer{id: "cust_aebxkhDZNaMmJeKsy0AHS0FQ", name: "Daniel Lima", ...}}
 
-  Options: \n#{NimbleOptions.docs(AbacatePay.Schema.Customer.create_customer_request())}
+  Options: \n#{NimbleOptions.docs(Schema.Customer.create_customer_request())}
   """
   @spec create(options :: keyword()) :: {:ok, t()} | {:error, any()}
   def create(options) do
     {:ok, validated_options} =
-      NimbleOptions.validate(options, AbacatePay.Schema.Customer.create_customer_request())
+      NimbleOptions.validate(options, Schema.Customer.create_customer_request())
 
     body =
       %{
@@ -63,9 +65,8 @@ defmodule AbacatePay.Customer do
       |> Enum.reject(fn {_k, v} -> is_nil(v) end)
       |> Enum.into(%{})
 
-    case AbacatePay.Api.Customer.create_customer(body) do
-      {:ok, response} -> build_pretty_customer(response)
-      {:error, reason} -> {:error, reason}
+    with {:ok, response} <- Api.Customer.create_customer(body) do
+      build_pretty_customer(response)
     end
   end
 
@@ -78,14 +79,13 @@ defmodule AbacatePay.Customer do
   """
   @spec list() :: {:ok, [t()]} | {:error, any()}
   def list do
-    case AbacatePay.Api.Customer.list_customers() do
-      {:ok, data_list} ->
+    with {:ok, data_list} <- Api.Customer.list_customers() do
+      pretty_customers =
         data_list
         |> Enum.map(&build_pretty_customer/1)
         |> Enum.map(fn {:ok, customer} -> customer end)
 
-      {:error, reason} ->
-        {:error, reason}
+      {:ok, pretty_customers}
     end
   end
 

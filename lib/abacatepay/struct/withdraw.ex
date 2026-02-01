@@ -3,6 +3,8 @@ defmodule AbacatePay.Withdraw do
   Module that represents a withdraw in AbacatePay.
   """
 
+  alias AbacatePay.{Api, Schema, Util}
+
   defstruct [
     :id,
     :status,
@@ -53,10 +55,10 @@ defmodule AbacatePay.Withdraw do
   @type external_id :: String.t() | nil
 
   @typedoc "Date and time of withdrawal creation."
-  @type created_at :: String.t()
+  @type created_at :: DateTime.t()
 
   @typedoc "Date and time of last withdrawal update."
-  @type updated_at :: String.t()
+  @type updated_at :: DateTime.t()
 
   @type t :: %__MODULE__{
           id: id,
@@ -86,22 +88,22 @@ defmodule AbacatePay.Withdraw do
         description: "Withdrawal for order #1234"
       ])
 
-  Options: \n#{NimbleOptions.docs(AbacatePay.Schema.Withdraw.create_withdraw_request())}
+  Options: \n#{NimbleOptions.docs(Schema.Withdraw.create_withdraw_request())}
   """
 
   def create(filter) do
     {:ok, options} =
-      NimbleOptions.validate(filter, AbacatePay.Schema.Withdraw.create_withdraw_request())
+      NimbleOptions.validate(filter, Schema.Withdraw.create_withdraw_request())
 
     parsed_pix = %{
       key: options[:pix][:key],
-      type: AbacatePay.Util.normalize_atom(options[:pix][:type])
+      type: Util.normalize_atom(options[:pix][:type])
     }
 
     body =
       %{
         externalId: options[:external_id],
-        method: AbacatePay.Util.normalize_atom(options[:method]),
+        method: Util.normalize_atom(options[:method]),
         amount: options[:amount],
         pix: parsed_pix,
         description: options[:description]
@@ -109,9 +111,8 @@ defmodule AbacatePay.Withdraw do
       |> Enum.reject(fn {_k, v} -> is_nil(v) end)
       |> Enum.into(%{})
 
-    case AbacatePay.Api.Withdraw.create_withdraw(body) do
-      {:ok, response} -> build_pretty_withdraw(response)
-      {:error, reason} -> {:error, reason}
+    with {:ok, response} <- Api.Withdraw.create_withdraw(body) do
+      build_pretty_withdraw(response)
     end
   end
 
@@ -124,9 +125,8 @@ defmodule AbacatePay.Withdraw do
   """
   @spec get(external_id :: String.t()) :: {:ok, t()} | {:error, any()}
   def get(external_id) do
-    case AbacatePay.Api.Withdraw.get_withdraw(external_id) do
-      {:ok, response} -> build_pretty_withdraw(response)
-      {:error, reason} -> {:error, reason}
+    with {:ok, response} <- Api.Withdraw.get_withdraw(external_id) do
+      build_pretty_withdraw(response)
     end
   end
 
@@ -142,14 +142,13 @@ defmodule AbacatePay.Withdraw do
   """
   @spec list() :: {:ok, list(t())} | {:error, any()}
   def list do
-    case AbacatePay.Api.Withdraw.list_withdraws() do
-      {:ok, data_list} ->
+    with {:ok, data_list} <- Api.Withdraw.list_withdraws() do
+      pretty_withdraws =
         data_list
         |> Enum.map(&build_pretty_withdraw/1)
         |> Enum.map(fn {:ok, withdraw} -> withdraw end)
 
-      {:error, reason} ->
-        {:error, reason}
+      {:ok, pretty_withdraws}
     end
   end
 
@@ -200,11 +199,11 @@ defmodule AbacatePay.Withdraw do
 
     pretty_fields = %AbacatePay.Withdraw{
       id: raw_data["id"],
-      status: AbacatePay.Util.atomize_enum(raw_data["status"]),
+      status: Util.atomize_enum(raw_data["status"]),
       description: raw_data["description"],
       dev_mode: raw_data["devMode"],
       receipt_url: raw_data["receiptUrl"],
-      kind: AbacatePay.Util.atomize_enum(raw_data["kind"]),
+      kind: Util.atomize_enum(raw_data["kind"]),
       amount: raw_data["amount"],
       platform_fee: raw_data["platformFee"],
       external_id: raw_data["externalId"],
@@ -262,10 +261,10 @@ defmodule AbacatePay.Withdraw do
 
     api_fields = %{
       id: pretty_withdraw.id,
-      status: AbacatePay.Util.normalize_atom(pretty_withdraw.status),
+      status: Util.normalize_atom(pretty_withdraw.status),
       devMode: pretty_withdraw.dev_mode,
       receiptUrl: pretty_withdraw.receipt_url,
-      kind: AbacatePay.Util.normalize_atom(pretty_withdraw.kind),
+      kind: Util.normalize_atom(pretty_withdraw.kind),
       amount: pretty_withdraw.amount,
       platformFee: pretty_withdraw.platform_fee,
       externalId: pretty_withdraw.external_id,

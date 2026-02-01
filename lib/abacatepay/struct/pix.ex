@@ -3,6 +3,8 @@ defmodule AbacatePay.Pix do
   Module that represents a Pix QR Code in AbacatePay.
   """
 
+  alias AbacatePay.{Api, Customer, Schema, Util}
+
   defstruct [
     :id,
     :amount,
@@ -41,7 +43,7 @@ defmodule AbacatePay.Pix do
   @type dev_mode :: boolean()
 
   @typedoc "Customer associated with the Pix QRCode Payment."
-  @type customer :: AbacatePay.Customer.t() | nil
+  @type customer :: Customer.t() | nil
 
   @typedoc "PIX code (copy-and-paste) for payment."
   @type br_code :: String.t()
@@ -56,13 +58,13 @@ defmodule AbacatePay.Pix do
   @type description :: String.t()
 
   @typedoc "QRCode PIX creation date and time."
-  @type created_at :: String.t()
+  @type created_at :: DateTime.t()
 
   @typedoc "QRCode PIX last updated date and time."
-  @type updated_at :: String.t()
+  @type updated_at :: DateTime.t()
 
   @typedoc "QRCode expiration date and time."
-  @type expires_at :: String.t()
+  @type expires_at :: DateTime.t() | nil
 
   @type t :: %__MODULE__{
           id: id,
@@ -96,16 +98,16 @@ defmodule AbacatePay.Pix do
       ...> ])
       {:ok, %AbacatePay.Pix{...}}
 
-  Options: \n#{NimbleOptions.docs(AbacatePay.Schema.Pix.create_pix_request())}
+  Options: \n#{NimbleOptions.docs(Schema.Pix.create_pix_request())}
   """
   @spec create(options :: keyword()) :: {:ok, t()} | {:error, any()}
   def create(options) do
     {:ok, validated_options} =
-      NimbleOptions.validate(options, AbacatePay.Schema.Pix.create_pix_request())
+      NimbleOptions.validate(options, Schema.Pix.create_pix_request())
 
     parsed_customer =
-      with %AbacatePay.Customer{} = customer_struct <- validated_options[:customer],
-           {:ok, customer_map} <- AbacatePay.Customer.build_api_customer(customer_struct) do
+      with %Customer{} = customer_struct <- validated_options[:customer],
+           {:ok, customer_map} <- Customer.build_api_customer(customer_struct) do
         customer_map.metadata
       else
         _ -> nil
@@ -122,9 +124,8 @@ defmodule AbacatePay.Pix do
       |> Enum.reject(fn {_k, v} -> is_nil(v) end)
       |> Enum.into(%{})
 
-    case AbacatePay.Api.Pix.create_pix_qrcode(body) do
-      {:ok, data} -> build_pretty_pix_qrcode(data)
-      {:error, reason} -> {:error, reason}
+    with {:ok, response} <- Api.Pix.create_pix_qrcode(body) do
+      build_pretty_pix_qrcode(response)
     end
   end
 
@@ -138,9 +139,8 @@ defmodule AbacatePay.Pix do
   @spec simulate_payment(id :: id(), metadata :: map()) ::
           {:ok, t()} | {:error, any()}
   def simulate_payment(id, metadata \\ %{}) do
-    case AbacatePay.Api.Pix.simulate_payment(id, metadata) do
-      {:ok, response} -> build_pretty_pix_qrcode(response)
-      {:error, reason} -> {:error, reason}
+    with {:ok, response} <- Api.Pix.simulate_payment(id, metadata) do
+      build_pretty_pix_qrcode(response)
     end
   end
 
@@ -153,9 +153,8 @@ defmodule AbacatePay.Pix do
   """
   @spec check_status(id :: id()) :: {:ok, t()} | {:error, any()}
   def check_status(id) do
-    case AbacatePay.Api.Pix.check_status(id) do
-      {:ok, response} -> build_pretty_pix_qrcode(response)
-      {:error, reason} -> {:error, reason}
+    with {:ok, response} <- Api.Pix.check_status(id) do
+      build_pretty_pix_qrcode(response)
     end
   end
 
@@ -214,7 +213,7 @@ defmodule AbacatePay.Pix do
     pretty_fields = %AbacatePay.Pix{
       id: raw_data["id"],
       amount: raw_data["amount"],
-      status: AbacatePay.Util.atomize_enum(raw_data["status"]),
+      status: Util.atomize_enum(raw_data["status"]),
       dev_mode: raw_data["devMode"],
       br_code: raw_data["brCode"],
       br_code_base_64: raw_data["brCodeBase64"],
@@ -283,7 +282,7 @@ defmodule AbacatePay.Pix do
     api_fields = %{
       id: pretty_pix_qrcode.id,
       amount: pretty_pix_qrcode.amount,
-      status: AbacatePay.Util.normalize_atom(pretty_pix_qrcode.status),
+      status: Util.normalize_atom(pretty_pix_qrcode.status),
       devMode: pretty_pix_qrcode.dev_mode,
       brCode: pretty_pix_qrcode.br_code,
       brCodeBase64: pretty_pix_qrcode.br_code_base_64,
