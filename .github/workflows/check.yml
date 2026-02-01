@@ -37,7 +37,7 @@ jobs:
         run: mix deps.get && mix deps.unlock --check-unused
 
       - name: Restore PLT
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: cache-plt
         with:
           path: priv/plts
