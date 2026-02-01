@@ -3,6 +3,8 @@ defmodule AbacatePay.Api.Withdraw do
   Module for handling Withdraw-related endpoints in the API.
   """
 
+  alias AbacatePay.{HTTPClient, ApiError}
+
   @doc """
   Creates a new withdraw.
 
@@ -11,9 +13,9 @@ defmodule AbacatePay.Api.Withdraw do
       iex> AbacatePay.Api.Withdraw.create_withdraw(%{amount: 5000, externalId: "withdraw_12345"})
       {:ok, %{...}}
   """
-  @spec create_withdraw(body :: map()) :: {:ok, map()} | {:error, AbacatePay.ApiError.t()}
+  @spec create_withdraw(body :: map()) :: {:ok, map()} | {:error, ApiError.t()} | {:error, any()}
   def create_withdraw(body) do
-    AbacatePay.HTTPClient.post(
+    HTTPClient.post(
       "/withdraw/create",
       body
     )
@@ -28,9 +30,9 @@ defmodule AbacatePay.Api.Withdraw do
       {:ok, %{...}}
   """
   @spec get_withdraw(external_id :: String.t()) ::
-          {:ok, map()} | {:error, AbacatePay.ApiError.t()}
+          {:ok, map()} | {:error, ApiError.t()} | {:error, any()}
   def get_withdraw(external_id) do
-    AbacatePay.HTTPClient.get("/withdraw/get/?externalId=#{external_id}")
+    HTTPClient.get("/withdraw/get?externalId=#{external_id}")
   end
 
   @doc """
@@ -41,8 +43,8 @@ defmodule AbacatePay.Api.Withdraw do
       iex> AbacatePay.Api.Withdraw.list_withdraws()
       {:ok, [%{...}, %{...}]}
   """
-  @spec list_withdraws() :: {:ok, list(map())} | {:error, AbacatePay.ApiError.t()}
+  @spec list_withdraws() :: {:ok, list(map())} | {:error, ApiError.t()} | {:error, any()}
   def list_withdraws do
-    AbacatePay.HTTPClient.get("/withdraw/list")
+    HTTPClient.get("/withdraw/list")
   end
 end

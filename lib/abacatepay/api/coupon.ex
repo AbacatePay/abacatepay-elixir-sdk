@@ -3,6 +3,8 @@ defmodule AbacatePay.Api.Coupon do
   Module for handling coupon-related endpoints in the API.
   """
 
+  alias AbacatePay.{HTTPClient, ApiError}
+
   @doc """
   Creates a new coupon.
 
@@ -11,9 +13,9 @@ defmodule AbacatePay.Api.Coupon do
       iex> AbacatePay.Api.Coupon.create_coupon(%{code: "DEYVIN_20", discountKind: "PERCENTAGE", discount: 15})
       {:ok, %{...}}
   """
-  @spec create_coupon(body :: map()) :: {:ok, map()} | {:error, AbacatePay.ApiError.t()}
+  @spec create_coupon(body :: map()) :: {:ok, map()} | {:error, ApiError.t()} | {:error, any()}
   def create_coupon(body) do
-    AbacatePay.HTTPClient.post("/coupon/create", body)
+    HTTPClient.post("/coupon/create", body)
   end
 
   @doc """
@@ -24,8 +26,8 @@ defmodule AbacatePay.Api.Coupon do
       iex> AbacatePay.Api.Coupon.list_coupons()
       {:ok, [%{...}, ...]}
   """
-  @spec list_coupons() :: {:ok, list(map())} | {:error, AbacatePay.ApiError.t()}
+  @spec list_coupons() :: {:ok, list(map())} | {:error, ApiError.t()} | {:error, any()}
   def list_coupons do
-    AbacatePay.HTTPClient.get("/coupon/list")
+    HTTPClient.get("/coupon/list")
   end
 end

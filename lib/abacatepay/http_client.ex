@@ -25,7 +25,7 @@ defmodule AbacatePay.HTTPClient do
         parse_response({:ok, %Finch.Response{body: body, status: status}})
 
       other ->
-        {:error, other}
+        other
     end
   end
 
@@ -46,7 +46,7 @@ defmodule AbacatePay.HTTPClient do
         parse_response({:ok, %Finch.Response{body: body, status: status}})
 
       other ->
-        {:error, other}
+        other
     end
   end
 
@@ -62,7 +62,7 @@ defmodule AbacatePay.HTTPClient do
         parse_response({:ok, %Finch.Response{body: body, status: status}})
 
       other ->
-        {:error, other}
+        other
     end
   end
 
@@ -78,7 +78,7 @@ defmodule AbacatePay.HTTPClient do
         parse_response({:ok, %Finch.Response{body: body, status: status}})
 
       other ->
-        {:error, other}
+        other
     end
   end
 

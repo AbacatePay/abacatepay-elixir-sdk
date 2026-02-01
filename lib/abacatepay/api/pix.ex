@@ -3,6 +3,8 @@ defmodule AbacatePay.Api.Pix do
   Module for handling Pix QR Code-related endpoints in the API.
   """
 
+  alias AbacatePay.{HTTPClient, ApiError}
+
   @doc """
   Creates a new Pix QR Code.
 
@@ -11,9 +13,10 @@ defmodule AbacatePay.Api.Pix do
       iex> AbacatePay.Api.Pix.create_pix_qrcode(%{amount: 1000, description: "Payment for order #1234"})
       {:ok, %{...}}
   """
-  @spec create_pix_qrcode(body :: map()) :: {:ok, map()} | {:error, AbacatePay.ApiError.t()}
+  @spec create_pix_qrcode(body :: map()) ::
+          {:ok, map()} | {:error, ApiError.t()} | {:error, any()}
   def create_pix_qrcode(body) do
-    AbacatePay.HTTPClient.post(
+    HTTPClient.post(
       "/pixQrCode/create",
       body
     )
@@ -28,10 +31,10 @@ defmodule AbacatePay.Api.Pix do
       {:ok, %{...}}
   """
   @spec simulate_payment(id :: String.t(), body :: map()) ::
-          {:ok, map()} | {:error, AbacatePay.ApiError.t()}
+          {:ok, map()} | {:error, ApiError.t()} | {:error, any()}
   def simulate_payment(id, body) do
-    AbacatePay.HTTPClient.post(
-      "/pixQrCode/simulate-payment/?id=#{id}",
+    HTTPClient.post(
+      "/pixQrCode/simulate-payment?id=#{id}",
       body
     )
   end
@@ -44,8 +47,8 @@ defmodule AbacatePay.Api.Pix do
       iex> AbacatePay.Api.Pix.check_status("pix_charabc123456789")
       {:ok, %{status: "PENDING", expiresAt: "2026-01-01T12:00:00Z"}}
   """
-  @spec check_status(id :: String.t()) :: {:ok, map()} | {:error, AbacatePay.ApiError.t()}
+  @spec check_status(id :: String.t()) :: {:ok, map()} | {:error, ApiError.t()} | {:error, any()}
   def check_status(id) do
-    AbacatePay.HTTPClient.get("/pixQrCode/check/?id=#{id}")
+    HTTPClient.get("/pixQrCode/check?id=#{id}")
   end
 end

@@ -3,6 +3,8 @@ defmodule AbacatePay.Api.Billing do
   Module for handling billing-related endpoints in the API.
   """
 
+  alias AbacatePay.{HTTPClient, ApiError}
+
   @doc """
   Creates a new billing.
 
@@ -11,9 +13,10 @@ defmodule AbacatePay.Api.Billing do
       iex> AbacatePay.Api.Billing.create_billing(%{...})
       {:ok, %{...}}
   """
-  @spec create_billing(body :: map()) :: {:ok, map()} | {:error, AbacatePay.ApiError.t()}
+  @spec create_billing(body :: map()) ::
+          {:ok, map()} | {:error, ApiError.t()} | {:error, any()}
   def create_billing(body) do
-    AbacatePay.HTTPClient.post(
+    HTTPClient.post(
       "/billing/create",
       body
     )
@@ -27,8 +30,8 @@ defmodule AbacatePay.Api.Billing do
       iex> AbacatePay.Api.Billing.list_billings()
       {:ok, [%{...}, ...]}
   """
-  @spec list_billings() :: {:ok, list(map())} | {:error, AbacatePay.ApiError.t()}
+  @spec list_billings() :: {:ok, list(map())} | {:error, ApiError.t()} | {:error, any()}
   def list_billings do
-    AbacatePay.HTTPClient.get("/billing/list")
+    HTTPClient.get("/billing/list")
   end
 end

@@ -10,9 +10,7 @@ defmodule AbacatePay.Util do
   Returns the AbacatePay public HMAC key used for verifying webhooks.
   """
   @spec get_public_key() :: String.t()
-  def get_public_key do
-    @public_key
-  end
+  def get_public_key, do: @public_key
 
   @doc """
   Verifies if the AbacatePay signature matches the expected HMAC.
