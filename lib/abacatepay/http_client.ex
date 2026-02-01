@@ -95,7 +95,7 @@ defmodule AbacatePay.HTTPClient do
 
           _ ->
             {:error,
-             %AbacatePay.ApiError{status_code: 500, message: "Unexpected response format"}}
+             %AbacatePay.ApiError{status_code: status, message: "Unexpected response format"}}
         end
 
       {:error, %Jason.DecodeError{data: error_message}} ->
