@@ -102,30 +102,33 @@ defmodule AbacatePay.Pix do
   """
   @spec create(options :: keyword()) :: {:ok, t()} | {:error, any()}
   def create(options) do
-    {:ok, validated_options} =
-      NimbleOptions.validate(options, Schema.Pix.create_pix_request())
+    case NimbleOptions.validate(options, Schema.Pix.create_pix_request()) do
+      {:ok, validated_options} ->
+        parsed_customer =
+          with %Customer{} = customer_struct <- validated_options[:customer],
+               {:ok, customer_map} <- Customer.build_api_customer(customer_struct) do
+            customer_map.metadata
+          else
+            _ -> nil
+          end
 
-    parsed_customer =
-      with %Customer{} = customer_struct <- validated_options[:customer],
-           {:ok, customer_map} <- Customer.build_api_customer(customer_struct) do
-        customer_map.metadata
-      else
-        _ -> nil
-      end
+        body =
+          %{
+            amount: validated_options[:amount],
+            description: validated_options[:description],
+            customer: parsed_customer,
+            expiresIn: validated_options[:expires_in],
+            metadata: validated_options[:metadata]
+          }
+          |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+          |> Enum.into(%{})
 
-    body =
-      %{
-        amount: validated_options[:amount],
-        description: validated_options[:description],
-        customer: parsed_customer,
-        expiresIn: validated_options[:expires_in],
-        metadata: validated_options[:metadata]
-      }
-      |> Enum.reject(fn {_k, v} -> is_nil(v) end)
-      |> Enum.into(%{})
+        with {:ok, response} <- Api.Pix.create_pix_qrcode(body) do
+          build_pretty_pix_qrcode(response)
+        end
 
-    with {:ok, response} <- Api.Pix.create_pix_qrcode(body) do
-      build_pretty_pix_qrcode(response)
+      {:error, %NimbleOptions.ValidationError{} = error} ->
+        {:error, error}
     end
   end
 

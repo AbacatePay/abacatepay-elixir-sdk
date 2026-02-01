@@ -42,6 +42,8 @@ defmodule AbacatePay.Api.PublicMRR do
   @spec get_revenue(String.t(), String.t()) ::
           {:ok, map()} | {:error, ApiError.t()} | {:error, any()}
   def get_revenue(start_date, end_date) do
-    HTTPClient.get("/public-mrr/revenue?startDate=#{start_date}&endDate=#{end_date}")
+    query = URI.encode_query(%{"startDate" => start_date, "endDate" => end_date})
+
+    HTTPClient.get("/public-mrr/revenue?" <> query)
   end
 end

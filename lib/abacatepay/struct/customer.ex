@@ -52,21 +52,24 @@ defmodule AbacatePay.Customer do
   """
   @spec create(options :: keyword()) :: {:ok, t()} | {:error, any()}
   def create(options) do
-    {:ok, validated_options} =
-      NimbleOptions.validate(options, Schema.Customer.create_customer_request())
+    case NimbleOptions.validate(options, Schema.Customer.create_customer_request()) do
+      {:ok, validated_options} ->
+        body =
+          %{
+            name: validated_options[:name],
+            cellphone: validated_options[:cellphone],
+            email: validated_options[:email],
+            taxId: validated_options[:tax_id]
+          }
+          |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+          |> Enum.into(%{})
 
-    body =
-      %{
-        name: validated_options[:name],
-        cellphone: validated_options[:cellphone],
-        email: validated_options[:email],
-        taxId: validated_options[:tax_id]
-      }
-      |> Enum.reject(fn {_k, v} -> is_nil(v) end)
-      |> Enum.into(%{})
+        with {:ok, response} <- Api.Customer.create_customer(body) do
+          build_pretty_customer(response)
+        end
 
-    with {:ok, response} <- Api.Customer.create_customer(body) do
-      build_pretty_customer(response)
+      {:error, %NimbleOptions.ValidationError{} = error} ->
+        {:error, error}
     end
   end
 

@@ -32,7 +32,9 @@ defmodule AbacatePay.Api.Withdraw do
   @spec get_withdraw(external_id :: String.t()) ::
           {:ok, map()} | {:error, ApiError.t()} | {:error, any()}
   def get_withdraw(external_id) do
-    HTTPClient.get("/withdraw/get?externalId=#{external_id}")
+    query = URI.encode_query(%{"externalId" => external_id})
+
+    HTTPClient.get("/withdraw/get?" <> query)
   end
 
   @doc """

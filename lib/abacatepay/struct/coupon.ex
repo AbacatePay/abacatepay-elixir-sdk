@@ -35,7 +35,7 @@ defmodule AbacatePay.Coupon do
 
   For :percentage use numbers from 1-100 (e.g. 10 = 10%). For :fixed use the value in cents (e.g. 500 = R$ 5,00)
   """
-  @type discount :: float()
+  @type discount :: integer()
 
   @typedoc "Limit on the number of times the coupon can be used. Use `-1` for unlimited coupons or a specific number to limit usage."
   @type max_redeems :: integer()
@@ -55,6 +55,9 @@ defmodule AbacatePay.Coupon do
   @typedoc "Indicates whether the coupon was created in a development (true) or production (false) environment."
   @type dev_mode :: boolean()
 
+  @typedoc "Additional metadata associated with the coupon."
+  @type metadata :: map() | nil
+
   @typedoc "Internal description of the coupon for your organization and control."
   @type notes :: String.t() | nil
 
@@ -72,6 +75,7 @@ defmodule AbacatePay.Coupon do
           redeems_count: redeems_count,
           status: status,
           dev_mode: dev_mode,
+          metadata: metadata,
           notes: notes,
           created_at: created_at,
           updated_at: updated_at
@@ -93,23 +97,26 @@ defmodule AbacatePay.Coupon do
   """
   @spec create(options :: keyword()) :: {:ok, t()} | {:error, any()}
   def create(options) do
-    {:ok, validated_options} =
-      NimbleOptions.validate(options, Schema.Coupon.create_coupon_request())
+    case NimbleOptions.validate(options, Schema.Coupon.create_coupon_request()) do
+      {:ok, validated_options} ->
+        body =
+          %{
+            code: validated_options[:code],
+            discountKind: Util.normalize_atom(validated_options[:discount_kind]),
+            discount: validated_options[:discount],
+            notes: validated_options[:notes],
+            maxRedeems: validated_options[:max_redeems],
+            metadata: validated_options[:metadata]
+          }
+          |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+          |> Enum.into(%{})
 
-    body =
-      %{
-        code: validated_options[:code],
-        discountKind: Util.normalize_atom(validated_options[:discount_kind]),
-        discount: validated_options[:discount],
-        notes: validated_options[:notes],
-        maxRedeems: validated_options[:max_redeems],
-        metadata: validated_options[:metadata]
-      }
-      |> Enum.reject(fn {_k, v} -> is_nil(v) end)
-      |> Enum.into(%{})
+        with {:ok, response} <- Api.Coupon.create_coupon(body) do
+          build_pretty_coupon(response)
+        end
 
-    with {:ok, response} <- Api.Coupon.create_coupon(body) do
-      build_pretty_coupon(response)
+      {:error, %NimbleOptions.ValidationError{} = error} ->
+        {:error, error}
     end
   end
 
@@ -186,6 +193,7 @@ defmodule AbacatePay.Coupon do
       redeems_count: raw_data["redeemsCount"],
       status: Util.atomize_enum(raw_data["status"]),
       dev_mode: raw_data["devMode"],
+      metadata: raw_data["metadata"],
       notes: raw_data["notes"],
       created_at: created_at,
       updated_at: updated_at
@@ -244,6 +252,7 @@ defmodule AbacatePay.Coupon do
       maxRedeems: pretty_coupon.max_redeems,
       status: Util.normalize_atom(pretty_coupon.status),
       devMode: pretty_coupon.dev_mode,
+      metadata: pretty_coupon.metadata,
       notes: pretty_coupon.notes,
       createdAt: created_at,
       updatedAt: updated_at

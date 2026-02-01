@@ -20,7 +20,7 @@ defmodule AbacatePay.Util do
       :crypto.mac(:hmac, :sha256, @public_key, payload)
       |> Base.encode64()
 
-    expected_signature == signature
+    :crypto.hash_equals(expected_signature, signature)
   end
 
   @doc """
@@ -40,7 +40,7 @@ defmodule AbacatePay.Util do
   def atomize_enum(value) when is_binary(value) do
     value
     |> Macro.underscore()
-    |> String.to_atom()
+    |> String.to_existing_atom()
   end
 
   def atomize_enum(_), do: nil

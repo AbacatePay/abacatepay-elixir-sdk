@@ -33,8 +33,10 @@ defmodule AbacatePay.Api.Pix do
   @spec simulate_payment(id :: String.t(), body :: map()) ::
           {:ok, map()} | {:error, ApiError.t()} | {:error, any()}
   def simulate_payment(id, body) do
+    query = URI.encode_query(%{"id" => id})
+
     HTTPClient.post(
-      "/pixQrCode/simulate-payment?id=#{id}",
+      "/pixQrCode/simulate-payment?" <> query,
       body
     )
   end
@@ -49,6 +51,8 @@ defmodule AbacatePay.Api.Pix do
   """
   @spec check_status(id :: String.t()) :: {:ok, map()} | {:error, ApiError.t()} | {:error, any()}
   def check_status(id) do
-    HTTPClient.get("/pixQrCode/check?id=#{id}")
+    query = URI.encode_query(%{"id" => id})
+
+    HTTPClient.get("/pixQrCode/check?" <> query)
   end
 end

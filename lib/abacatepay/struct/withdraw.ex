@@ -36,7 +36,7 @@ defmodule AbacatePay.Withdraw do
   @typedoc "A description of the withdraw."
   @type description :: String.t() | nil
 
-  @typedoc "Indicates whether the loot was created in a development environment (sandbox) or production. AbacatePay currently only supports withdrawals in production."
+  @typedoc "Indicates whether the withdraw was created in a development environment (sandbox) or production. AbacatePay currently only supports withdrawals in production."
   @type dev_mode :: boolean()
 
   @typedoc "Withdrawal transaction receipt URL."
@@ -63,6 +63,7 @@ defmodule AbacatePay.Withdraw do
   @type t :: %__MODULE__{
           id: id,
           status: status,
+          description: description,
           dev_mode: dev_mode,
           receipt_url: receipt_url,
           kind: kind,
@@ -91,28 +92,31 @@ defmodule AbacatePay.Withdraw do
   Options: \n#{NimbleOptions.docs(Schema.Withdraw.create_withdraw_request())}
   """
 
-  def create(filter) do
-    {:ok, options} =
-      NimbleOptions.validate(filter, Schema.Withdraw.create_withdraw_request())
+  def create(options) do
+    case NimbleOptions.validate(options, Schema.Withdraw.create_withdraw_request()) do
+      {:ok, validated_options} ->
+        parsed_pix = %{
+          key: validated_options[:pix][:key],
+          type: Util.normalize_atom(validated_options[:pix][:type])
+        }
 
-    parsed_pix = %{
-      key: options[:pix][:key],
-      type: Util.normalize_atom(options[:pix][:type])
-    }
+        body =
+          %{
+            externalId: validated_options[:external_id],
+            method: Util.normalize_atom(validated_options[:method]),
+            amount: validated_options[:amount],
+            pix: parsed_pix,
+            description: validated_options[:description]
+          }
+          |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+          |> Enum.into(%{})
 
-    body =
-      %{
-        externalId: options[:external_id],
-        method: Util.normalize_atom(options[:method]),
-        amount: options[:amount],
-        pix: parsed_pix,
-        description: options[:description]
-      }
-      |> Enum.reject(fn {_k, v} -> is_nil(v) end)
-      |> Enum.into(%{})
+        with {:ok, response} <- Api.Withdraw.create_withdraw(body) do
+          build_pretty_withdraw(response)
+        end
 
-    with {:ok, response} <- Api.Withdraw.create_withdraw(body) do
-      build_pretty_withdraw(response)
+      {:error, %NimbleOptions.ValidationError{} = error} ->
+        {:error, error}
     end
   end
 

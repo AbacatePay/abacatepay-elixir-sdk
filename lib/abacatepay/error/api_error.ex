@@ -10,7 +10,7 @@ defmodule AbacatePay.ApiError do
     :message
   ]
 
-  @type t :: %{
+  @type t :: %__MODULE__{
           status_code: status_code,
           message: message
         }

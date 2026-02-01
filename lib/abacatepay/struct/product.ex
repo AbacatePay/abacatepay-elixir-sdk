@@ -21,7 +21,7 @@ defmodule AbacatePay.Product do
   @type price :: non_neg_integer()
 
   @typedoc "Detailed product description."
-  @type description :: String.t()
+  @type description :: String.t() | nil
 
   @typedoc "Product name."
   @type name :: String.t()

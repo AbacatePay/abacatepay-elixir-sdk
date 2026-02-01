@@ -16,6 +16,8 @@ def deps do
 end
 ```
 
+The docs can be found at [https://hexdocs.pm/abacatepay](https://hexdocs.pm/abacatepay).
+
 ### Configuration
 
 AbacatePay has a range of configuration options, but most applications will have a configuration that looks like the following:
@@ -44,12 +46,12 @@ This example demonstrates how to create a new customer and a new billing using o
 listed_products = [
   %AbacatePay.Product{
     name: "Product 1",
-    amount: 5000,
+    price: 5000,
     quantity: 1
   },
   %AbacatePay.Product{
     name: "Product 2",
-    amount: 3000,
+    price: 3000,
     quantity: 2
   }
 ]

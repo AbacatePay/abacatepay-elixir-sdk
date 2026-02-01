@@ -19,7 +19,6 @@ defmodule AbacatePay.Billing do
     :allow_coupons,
     :coupons,
     :created_at,
-    :external_id,
     :updated_at
   ]
 
@@ -120,7 +119,7 @@ defmodule AbacatePay.Billing do
         products: [
           %AbacatePay.Product{
             name: "Product 1",
-            amount: 5000,
+            price: 5000,
             quantity: 1
           }
         ],
@@ -135,50 +134,54 @@ defmodule AbacatePay.Billing do
   """
   @spec create(options :: keyword()) :: {:ok, t()} | {:error, any()}
   def create(options) do
-    {:ok, validated_options} =
-      NimbleOptions.validate(options, Schema.Billing.create_billing_request())
+    case NimbleOptions.validate(options, Schema.Billing.create_billing_request()) do
+      {:ok, validated_options} ->
+        parsed_methods =
+          validated_options[:methods]
+          |> Enum.map(&Util.normalize_atom/1)
 
-    parsed_methods =
-      validated_options[:methods]
-      |> Enum.map(&Util.normalize_atom/1)
+        parsed_products =
+          validated_options[:products]
+          |> Enum.map(&Product.build_api_product/1)
+          |> Enum.map(fn {:ok, product} -> product end)
 
-    parsed_products =
-      validated_options[:products]
-      |> Enum.map(&Product.build_api_product/1)
-      |> Enum.map(fn {:ok, product} -> product end)
+        parsed_customer_id =
+          case validated_options[:customer] do
+            %Customer{id: id} -> id
+            _ -> nil
+          end
 
-    parsed_customer_id =
-      case validated_options[:customer] do
-        %Customer{id: id} -> id
-        _ -> nil
-      end
+        parsed_customer =
+          with %Customer{} = customer_struct <- validated_options[:customer],
+               {:ok, customer_map} <- Customer.build_api_customer(customer_struct) do
+            customer_map.metadata
+          else
+            _ -> nil
+          end
 
-    parsed_customer =
-      with %Customer{} = customer_struct <- validated_options[:customer],
-           {:ok, customer_map} <- Customer.build_api_customer(customer_struct) do
-        customer_map.metadata
-      else
-        _ -> nil
-      end
+        body =
+          %{
+            frequency: Util.normalize_atom(validated_options[:frequency]),
+            methods: parsed_methods,
+            products: parsed_products,
+            returnUrl: validated_options[:return_url],
+            completionUrl: validated_options[:completion_url],
+            customer: parsed_customer,
+            customerId: parsed_customer_id,
+            allowCoupons: validated_options[:allow_coupons],
+            metadata: validated_options[:metadata],
+            coupons: validated_options[:coupons],
+            externalId: validated_options[:external_id]
+          }
+          |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+          |> Enum.into(%{})
 
-    body =
-      %{
-        frequency: Util.normalize_atom(validated_options[:frequency]),
-        methods: parsed_methods,
-        products: parsed_products,
-        returnUrl: validated_options[:return_url],
-        completionUrl: validated_options[:completion_url],
-        customer: parsed_customer,
-        customerId: parsed_customer_id,
-        allowCoupons: validated_options[:allow_coupons],
-        coupons: validated_options[:coupons],
-        externalId: validated_options[:external_id]
-      }
-      |> Enum.reject(fn {_k, v} -> is_nil(v) end)
-      |> Enum.into(%{})
+        with {:ok, response} <- Api.Billing.create_billing(body) do
+          build_pretty_billing(response)
+        end
 
-    with {:ok, response} <- Api.Billing.create_billing(body) do
-      build_pretty_billing(response)
+      {:error, %NimbleOptions.ValidationError{} = error} ->
+        {:error, error}
     end
   end
 
@@ -249,6 +252,18 @@ defmodule AbacatePay.Billing do
       |> Enum.map(&Product.build_pretty_product/1)
       |> Enum.map(fn {:ok, product} -> product end)
 
+    pretty_created_at =
+      case raw_data["createdAt"] do
+        nil -> nil
+        datetime_str -> DateTime.from_iso8601(datetime_str) |> elem(1)
+      end
+
+    pretty_updated_at =
+      case raw_data["updatedAt"] do
+        nil -> nil
+        datetime_str -> DateTime.from_iso8601(datetime_str) |> elem(1)
+      end
+
     pretty_fields = %AbacatePay.Billing{
       id: raw_data["id"],
       frequency: Util.atomize_enum(raw_data["frequency"]),
@@ -262,8 +277,8 @@ defmodule AbacatePay.Billing do
       next_billing: raw_data["nextBilling"],
       allow_coupons: raw_data["allowCoupons"],
       coupons: raw_data["coupons"],
-      created_at: raw_data["createdAt"],
-      updated_at: raw_data["updatedAt"]
+      created_at: pretty_created_at,
+      updated_at: pretty_updated_at
     }
 
     {:ok, pretty_fields}
@@ -307,7 +322,7 @@ defmodule AbacatePay.Billing do
   """
   @spec build_api_billing(pretty_billing :: t()) :: {:ok, map()}
   def build_api_billing(pretty_billing) do
-    api_customer =
+    customer =
       with %Customer{} = customer_struct <- pretty_billing.customer,
            {:ok, customer_map} <- Customer.build_api_customer(customer_struct) do
         customer_map
@@ -315,12 +330,12 @@ defmodule AbacatePay.Billing do
         _ -> nil
       end
 
-    api_products =
+    products =
       pretty_billing.products
       |> Enum.map(&Product.build_api_product/1)
       |> Enum.map(fn {:ok, product} -> product end)
 
-    api_methods =
+    methods =
       pretty_billing.methods
       |> Enum.map(&Util.normalize_atom/1)
 
@@ -336,15 +351,21 @@ defmodule AbacatePay.Billing do
         datetime -> DateTime.to_iso8601(datetime)
       end
 
+    metadata = %{
+      "fee" => pretty_billing.metadata.fee,
+      "returnUrl" => pretty_billing.metadata.return_url,
+      "completionUrl" => pretty_billing.metadata.completion_url
+    }
+
     api_fields = %{
       frequency: Util.normalize_atom(pretty_billing.frequency),
       url: pretty_billing.url,
       status: Util.normalize_atom(pretty_billing.status),
       devMode: pretty_billing.dev_mode,
-      methods: api_methods,
-      products: api_products,
-      customer: api_customer,
-      metadata: pretty_billing.metadata,
+      methods: methods,
+      products: products,
+      customer: customer,
+      metadata: metadata,
       nextBilling: pretty_billing.next_billing,
       allowCoupons: pretty_billing.allow_coupons,
       coupons: pretty_billing.coupons,
