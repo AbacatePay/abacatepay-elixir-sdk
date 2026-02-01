@@ -4,7 +4,7 @@ defmodule AbacatePay.MixProject do
   @app :abacatepay
   @description "AbacatePay Elixir SDK for you to start receiving payments in seconds"
   @name "AbacatePay"
-  @version "1.0.0"
+  @version "0.2.0"
   @source_url "https://github.com/AbacatePay/abacatepay-elixir-sdk"
 
   def project do
