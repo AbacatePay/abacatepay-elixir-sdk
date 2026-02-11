@@ -2,9 +2,9 @@
 
 # AbacatePay Elixir
 
-<img src="https://res.cloudinary.com/dkok1obj5/image/upload/v1767631413/avo_clhmaf.png" width="100%" alt="AbacatePay Open Source"/>
-
 Official **AbacatePay Elixir** SDK to integrate payments via PIX in a simple, secure and fast way.
+
+<img src="https://res.cloudinary.com/dkok1obj5/image/upload/v1767631413/avo_clhmaf.png" width="100%" alt="AbacatePay Open Source"/>
 
 ![Build Status](https://github.com/AbacatePay/abacatepay-elixir-sdk/actions/workflows/check.yml/badge.svg)
 [![Hex.pm](https://img.shields.io/hexpm/v/abacatepay.svg)](https://hex.pm/packages/abacatepay)
@@ -181,3 +181,4 @@ Retrieve a list of all billings.
   updated_at: ~U[2026-01-02T12:00:00Z]
 }
 ```
+
