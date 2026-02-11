@@ -12,8 +12,7 @@ defmodule AbacatePay.PixTest do
         dev_mode: false,
         br_code: "test_code",
         br_code_base_64: "data:image/png;base64,test",
-        platform_fee: 80,
-        description: "Test payment"
+        platform_fee: 80
       }
 
       assert pix.id == "pix_123"
@@ -40,23 +39,19 @@ defmodule AbacatePay.PixTest do
         "brCode" => "00020126360014BR.GOV.BCB.PIX",
         "brCodeBase64" => "data:image/png;base64,test",
         "platformFee" => 80,
-        "description" => "PIX Payment for order #1234",
         "createdAt" => "2026-01-01T12:00:00Z",
         "updatedAt" => "2026-01-01T12:05:00Z",
         "expiresAt" => "2026-01-02T12:00:00Z",
-        "customer" => nil,
-        "metadata" => nil,
         "expiresIn" => nil
       }
 
-      assert {:ok, pix} = Pix.build_pretty_pix_qrcode(raw_data)
+      assert {:ok, pix} = Pix.build_struct(raw_data)
       assert pix.id == "pix_charabc123456789"
       assert pix.amount == 1_500
       assert pix.status == :paid
       assert pix.dev_mode == false
       assert pix.br_code == "00020126360014BR.GOV.BCB.PIX"
       assert pix.platform_fee == 80
-      assert pix.description == "PIX Payment for order #1234"
     end
 
     test "handles datetime parsing" do
@@ -68,16 +63,13 @@ defmodule AbacatePay.PixTest do
         "brCode" => "code",
         "brCodeBase64" => "data",
         "platformFee" => 0,
-        "description" => nil,
         "createdAt" => "2026-01-15T10:30:45Z",
         "updatedAt" => "2026-01-15T10:35:45Z",
         "expiresAt" => "2026-01-16T10:30:45Z",
-        "customer" => nil,
-        "metadata" => nil,
         "expiresIn" => nil
       }
 
-      assert {:ok, pix} = Pix.build_pretty_pix_qrcode(raw_data)
+      assert {:ok, pix} = Pix.build_struct(raw_data)
       assert pix.created_at != nil
       assert pix.updated_at != nil
       assert pix.expires_at != nil
@@ -92,16 +84,13 @@ defmodule AbacatePay.PixTest do
         "brCode" => "code",
         "brCodeBase64" => "data",
         "platformFee" => 0,
-        "description" => nil,
         "createdAt" => nil,
         "updatedAt" => nil,
         "expiresAt" => nil,
-        "customer" => nil,
-        "metadata" => nil,
         "expiresIn" => nil
       }
 
-      assert {:ok, pix} = Pix.build_pretty_pix_qrcode(raw_data)
+      assert {:ok, pix} = Pix.build_struct(raw_data)
       assert pix.created_at == nil
       assert pix.updated_at == nil
       assert pix.expires_at == nil
@@ -119,16 +108,13 @@ defmodule AbacatePay.PixTest do
           "brCode" => "code",
           "brCodeBase64" => "data",
           "platformFee" => 0,
-          "description" => nil,
           "createdAt" => nil,
           "updatedAt" => nil,
           "expiresAt" => nil,
-          "customer" => nil,
-          "metadata" => nil,
           "expiresIn" => nil
         }
 
-        assert {:ok, pix} = Pix.build_pretty_pix_qrcode(raw_data)
+        assert {:ok, pix} = Pix.build_struct(raw_data)
         assert pix.status == Util.atomize_enum(status)
       end)
     end
@@ -142,16 +128,13 @@ defmodule AbacatePay.PixTest do
         "brCode" => "code",
         "brCodeBase64" => "data",
         "platformFee" => 80_000,
-        "description" => "Large payment",
         "createdAt" => nil,
         "updatedAt" => nil,
         "expiresAt" => nil,
-        "customer" => nil,
-        "metadata" => nil,
         "expiresIn" => nil
       }
 
-      assert {:ok, pix} = Pix.build_pretty_pix_qrcode(raw_data)
+      assert {:ok, pix} = Pix.build_struct(raw_data)
       assert pix.amount == 999_999_999
       assert pix.platform_fee == 80_000
     end
@@ -167,21 +150,17 @@ defmodule AbacatePay.PixTest do
         br_code: "test_code",
         br_code_base_64: "data:image/png;base64,test",
         platform_fee: 80,
-        description: "Test payment",
         created_at: ~U[2026-01-01T12:00:00Z],
         updated_at: ~U[2026-01-01T12:05:00Z],
-        expires_at: ~U[2026-01-02T12:00:00Z],
-        customer: nil,
-        metadata: nil,
-        expires_in: nil
+        expires_at: ~U[2026-01-02T12:00:00Z]
       }
 
-      assert {:ok, api_map} = Pix.build_api_pix_qrcode(pix)
-      assert api_map[:id] == "pix_123"
-      assert api_map[:amount] == 1_500
-      assert api_map[:status] == "PAID"
-      assert api_map[:devMode] == false
-      assert String.contains?(api_map[:createdAt], "2026-01-01")
+      assert {:ok, raw} = Pix.build_raw(pix)
+      assert raw[:id] == "pix_123"
+      assert raw[:amount] == 1_500
+      assert raw[:status] == "PAID"
+      assert raw[:devMode] == false
+      assert String.contains?(raw[:createdAt], "2026-01-01")
     end
 
     test "handles nil datetimes in API format" do
@@ -193,25 +172,21 @@ defmodule AbacatePay.PixTest do
         br_code: "code",
         br_code_base_64: "data",
         platform_fee: 0,
-        description: nil,
         created_at: nil,
         updated_at: nil,
-        expires_at: nil,
-        customer: nil,
-        metadata: nil,
-        expires_in: nil
+        expires_at: nil
       }
 
-      assert {:ok, api_map} = Pix.build_api_pix_qrcode(pix)
-      assert api_map[:createdAt] == nil
-      assert api_map[:updatedAt] == nil
-      assert api_map[:expiresAt] == nil
+      assert {:ok, raw} = Pix.build_raw(pix)
+      assert raw[:createdAt] == nil
+      assert raw[:updatedAt] == nil
+      assert raw[:expiresAt] == nil
     end
   end
 
   describe "roundtrip conversion" do
     test "converts raw data to struct and back" do
-      raw_data = %{
+      data = %{
         "id" => "pix_roundtrip",
         "amount" => 5_000,
         "status" => "PENDING",
@@ -219,21 +194,18 @@ defmodule AbacatePay.PixTest do
         "brCode" => "00020126360014BR.GOV.BCB.PIX",
         "brCodeBase64" => "data:image/png;base64,test",
         "platformFee" => 80,
-        "description" => "Roundtrip test",
         "createdAt" => "2026-01-15T10:30:45Z",
         "updatedAt" => "2026-01-15T10:35:45Z",
         "expiresAt" => nil,
-        "customer" => nil,
-        "metadata" => nil,
         "expiresIn" => nil
       }
 
-      assert {:ok, pix} = Pix.build_pretty_pix_qrcode(raw_data)
-      assert {:ok, api_map} = Pix.build_api_pix_qrcode(pix)
+      assert {:ok, pix} = Pix.build_struct(data)
+      assert {:ok, raw} = Pix.build_raw(pix)
 
-      assert api_map[:id] == raw_data["id"]
-      assert api_map[:amount] == raw_data["amount"]
-      assert api_map[:status] == raw_data["status"]
+      assert raw[:id] == data["id"]
+      assert raw[:amount] == data["amount"]
+      assert raw[:status] == data["status"]
     end
   end
 end

@@ -4,10 +4,15 @@ defmodule AbacatePay.Application do
 
   @moduledoc false
 
+  alias AbacatePay.Config
+
   use Application
 
   @impl true
   def start(_type, _args) do
+    config = Config.validate!()
+    :ok = Config.persist(config)
+
     children = [
       # Start the Finch HTTP client
       {Finch, name: AbacatePay.Finch}

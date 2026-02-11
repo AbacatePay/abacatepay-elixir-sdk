@@ -59,7 +59,10 @@ customer_data = [
   name: "Daniel Lima",
   tax_id: "123.456.789-01",
   email: "daniel_lima@abacatepay.com",
-  cellphone: "+5511999999999"
+  cellphone: "+5511999999999",
+  country: "BR",
+  zip_code: "01234-567",
+  metadata: %{notes: "Important Customer"}
 ]
 
 {:ok, customer} = AbacatePay.Customer.create(customer_data)
@@ -153,7 +156,10 @@ Retrieve a list of all billings.
   name: "Daniel Lima",
   tax_id: "123.456.789-01",
   email: "daniel_lima@abacatepay.com",
-  cellphone: "+5511999999999"
+  cellphone: "+5511999999999",
+  country: "BR",
+  zip_code: "01234-567",
+  metadata: %{notes: "Important Customer"},
 }
 ```
 

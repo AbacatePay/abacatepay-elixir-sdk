@@ -7,17 +7,17 @@ defmodule AbacatePay.Api.PixTest do
 
   @default_pix_id "pix_char_123456"
 
-  describe "create_pix_qrcode/1" do
-    test "creates a pix QR code successfully with required fields" do
+  describe "create/1" do
+    test "creates a qr code successfully with required fields" do
       body = %{
-        amount: 123
+        amount: 4_000
       }
 
       expected_response = %{
         "id" => @default_pix_id,
-        "amount" => 123,
+        "amount" => 4_000,
         "status" => "PENDING",
-        "devMode" => true,
+        "devMode" => false,
         "brCode" => "00020101021226950014br.gov.bcb.pix",
         "brCodeBase64" => "data:image/png;base64,iVBORw0KGgoAAA",
         "platformFee" => 80,
@@ -28,11 +28,11 @@ defmodule AbacatePay.Api.PixTest do
 
       MockHTTPServer.stub_post("/pixQrCode/create", body, expected_response)
 
-      assert {:ok, pix} = Pix.create_pix_qrcode(body)
+      assert {:ok, pix} = Pix.create(body)
       assert pix["id"] == @default_pix_id
-      assert pix["amount"] == 123
+      assert pix["amount"] == 4_000
       assert pix["status"] == "PENDING"
-      assert pix["devMode"] == true
+      assert pix["devMode"] == false
       assert pix["brCode"] == "00020101021226950014br.gov.bcb.pix"
       assert pix["brCodeBase64"] == "data:image/png;base64,iVBORw0KGgoAAA"
       assert pix["platformFee"] == 80
@@ -41,9 +41,9 @@ defmodule AbacatePay.Api.PixTest do
       assert pix["expiresAt"] == "2025-03-25T21:50:20.772Z"
     end
 
-    test "creates a pix QR code with all optional fields" do
+    test "creates a qr code with all optional fields" do
       body = %{
-        amount: 123,
+        amount: 4_000,
         expires_in: 3_600,
         description: "Pagamento do pedido #12345",
         customer: %{
@@ -59,9 +59,9 @@ defmodule AbacatePay.Api.PixTest do
 
       expected_response = %{
         "id" => @default_pix_id,
-        "amount" => 123,
+        "amount" => 4_000,
         "status" => "PENDING",
-        "devMode" => true,
+        "devMode" => false,
         "brCode" => "00020101021226950014br.gov.bcb.pix",
         "brCodeBase64" => "data:image/png;base64,iVBORw0KGgoAAA",
         "platformFee" => 80,
@@ -72,11 +72,11 @@ defmodule AbacatePay.Api.PixTest do
 
       MockHTTPServer.stub_post("/pixQrCode/create", body, expected_response)
 
-      assert {:ok, pix} = Pix.create_pix_qrcode(body)
+      assert {:ok, pix} = Pix.create(body)
       assert pix["id"] == @default_pix_id
-      assert pix["amount"] == 123
+      assert pix["amount"] == 4_000
       assert pix["status"] == "PENDING"
-      assert pix["devMode"] == true
+      assert pix["devMode"] == false
       assert pix["brCode"] == "00020101021226950014br.gov.bcb.pix"
       assert pix["brCodeBase64"] == "data:image/png;base64,iVBORw0KGgoAAA"
       assert pix["platformFee"] == 80
@@ -100,7 +100,7 @@ defmodule AbacatePay.Api.PixTest do
 
       MockHTTPServer.stub_post("/pixQrCode/create", body, expected_response)
 
-      assert {:ok, pix} = Pix.create_pix_qrcode(body)
+      assert {:ok, pix} = Pix.create(body)
       assert pix["amount"] == 100
       assert pix["id"] == "pix_minimum"
       assert pix["status"] == "PENDING"
@@ -121,7 +121,7 @@ defmodule AbacatePay.Api.PixTest do
 
       MockHTTPServer.stub_post("/pixQrCode/create", body, expected_response)
 
-      assert {:ok, pix} = Pix.create_pix_qrcode(body)
+      assert {:ok, pix} = Pix.create(body)
       assert pix["amount"] == 99_999_999
       assert pix["id"] == "pix_large"
       assert pix["status"] == "PENDING"
@@ -135,7 +135,7 @@ defmodule AbacatePay.Api.PixTest do
       error = MockHTTPServer.mock_error(400, "Missing required field: amount")
       MockHTTPServer.stub_error(:post, "/pixQrCode/create", error)
 
-      assert {:error, returned_error} = Pix.create_pix_qrcode(body)
+      assert {:error, returned_error} = Pix.create(body)
       assert returned_error.status_code == 400
     end
 
@@ -148,7 +148,7 @@ defmodule AbacatePay.Api.PixTest do
       error = MockHTTPServer.mock_error(422, "Amount must be positive")
       MockHTTPServer.stub_error(:post, "/pixQrCode/create", error)
 
-      assert {:error, returned_error} = Pix.create_pix_qrcode(body)
+      assert {:error, returned_error} = Pix.create(body)
       assert returned_error.status_code == 422
     end
 
@@ -161,7 +161,7 @@ defmodule AbacatePay.Api.PixTest do
       error = MockHTTPServer.mock_error(401, "Unauthorized")
       MockHTTPServer.stub_error(:post, "/pixQrCode/create", error)
 
-      assert {:error, returned_error} = Pix.create_pix_qrcode(body)
+      assert {:error, returned_error} = Pix.create(body)
       assert returned_error.status_code == 401
     end
 
@@ -174,7 +174,7 @@ defmodule AbacatePay.Api.PixTest do
       error = MockHTTPServer.mock_error(500, "Internal Server Error")
       MockHTTPServer.stub_error(:post, "/pixQrCode/create", error)
 
-      assert {:error, returned_error} = Pix.create_pix_qrcode(body)
+      assert {:error, returned_error} = Pix.create(body)
       assert returned_error.status_code == 500
     end
   end

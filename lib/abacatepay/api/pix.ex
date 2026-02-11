@@ -10,12 +10,12 @@ defmodule AbacatePay.Api.Pix do
 
   ## Examples
 
-      iex> AbacatePay.Api.Pix.create_pix_qrcode(%{amount: 1000, description: "Payment for order #1234"})
+      iex> AbacatePay.Api.Pix.create(%{amount: 1000, description: "Payment for order #1234"})
       {:ok, %{...}}
   """
-  @spec create_pix_qrcode(body :: map()) ::
+  @spec create(body :: map()) ::
           {:ok, map()} | {:error, ApiError.t()} | {:error, any()}
-  def create_pix_qrcode(body) do
+  def create(body) do
     HTTPClient.post(
       "/pixQrCode/create",
       body

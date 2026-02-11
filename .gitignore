@@ -25,5 +25,8 @@ abacatepay-*.tar
 # VSCode Elixir LS Extension
 .elixir_ls/
 
+# Environment files
+.env*
+
 # Priv
 /priv/

@@ -24,6 +24,34 @@ defmodule AbacatePay.HttpClientTest do
       assert data == expected_data
     end
 
+    test "get/1 returns prased response data with pagination" do
+      expected_data = %{
+        "data" => [
+          %{
+            "id" => "bill_123456",
+            "metadata" => %{
+              "name" => "Daniel Lima",
+              "cellphone" => "(11) 4002-8922",
+              "email" => "daniel_lima@abacatepay.com",
+              "taxId" => "123.456.789-01"
+            }
+          }
+        ],
+        "pagination" => %{
+          "page" => 1,
+          "limit" => 20,
+          "totalPages" => 5,
+          "totalItems" => 100
+        }
+      }
+
+      MockHTTPServer.stub_get("/customers/list?page=1&limit=20", expected_data)
+      assert {:ok, data, pagination} = HTTPClient.get("/customers/list?page=1&limit=20")
+
+      assert data == expected_data["data"]
+      assert pagination == expected_data["pagination"]
+    end
+
     test "post/2 returns parsed response data" do
       body = %{
         name: "Daniel Lima",

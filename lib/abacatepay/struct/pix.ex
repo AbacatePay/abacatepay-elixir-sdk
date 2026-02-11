@@ -1,6 +1,6 @@
 defmodule AbacatePay.Pix do
   @moduledoc ~S"""
-  Struct representing an AbacatePay Pix QR Code.
+  Struct representing an AbacatePay QR Code Pix.
   """
 
   alias AbacatePay.{Api, Customer, Schema, Util}
@@ -10,40 +10,33 @@ defmodule AbacatePay.Pix do
     :amount,
     :status,
     :dev_mode,
-    :customer,
     :br_code,
     :br_code_base_64,
     :platform_fee,
-    :description,
     :created_at,
     :updated_at,
-    :metadata,
-    :expires_at,
-    :expires_in
+    :expires_at
   ]
 
-  @typedoc "Unique billing identifier."
+  @typedoc "Unique QRCode PIX identifier."
   @type id :: String.t()
 
   @typedoc "Charge amount in cents (e.g. 4000 = R$40.00)."
   @type amount :: integer()
 
   @typedoc """
-  Billing status. Can be one of the following:
+  PIX status. Can be one of the following:
 
-  - `:pending` - The Pix QRCode is pending payment.
-  - `:expired` - The Pix QRCode has expired.
-  - `:cancelled` - The Pix QRCode has been cancelled.
-  - `:paid` - The Pix QRCode has been paid.
-  - `:refunded` - The Pix QRCode payment has been refunded.
+  - `:pending`: The PIX QR Code has been created but not yet paid.
+  - `:expired`: The PIX QR Code has expired without being paid.
+  - `:cancelled`: The PIX QR Code has been cancelled.
+  - `:paid`: The PIX QR Code has been paid.
+  - `:refunded`: The payment for the PIX QR Code has been refunded.
   """
   @type status :: :pending | :expired | :cancelled | :paid | :refunded
 
   @typedoc "Indicates whether the charge is in a testing (true) or production (false) environment."
   @type dev_mode :: boolean()
-
-  @typedoc "Customer associated with the Pix QRCode Payment."
-  @type customer :: Customer.t() | nil
 
   @typedoc "PIX code (copy-and-paste) for payment."
   @type br_code :: String.t()
@@ -53,9 +46,6 @@ defmodule AbacatePay.Pix do
 
   @typedoc "Platform fee in cents. Example: 80 means R$0.80."
   @type platform_fee :: integer()
-
-  @typedoc "Payment description."
-  @type description :: String.t()
 
   @typedoc "QRCode PIX creation date and time."
   @type created_at :: DateTime.t()
@@ -74,7 +64,6 @@ defmodule AbacatePay.Pix do
           br_code: br_code,
           br_code_base_64: br_code_base_64,
           platform_fee: platform_fee,
-          description: description,
           created_at: created_at,
           updated_at: updated_at,
           expires_at: expires_at
@@ -106,7 +95,7 @@ defmodule AbacatePay.Pix do
       {:ok, validated_options} ->
         parsed_customer =
           with %Customer{} = customer_struct <- validated_options[:customer],
-               {:ok, customer_map} <- Customer.build_api_customer(customer_struct) do
+               {:ok, customer_map} <- Customer.build_raw(customer_struct) do
             customer_map.metadata
           else
             _ -> nil
@@ -123,8 +112,8 @@ defmodule AbacatePay.Pix do
           |> Enum.reject(fn {_k, v} -> is_nil(v) end)
           |> Enum.into(%{})
 
-        with {:ok, response} <- Api.Pix.create_pix_qrcode(body) do
-          build_pretty_pix_qrcode(response)
+        with {:ok, response} <- Api.Pix.create(body) do
+          build_struct(response)
         end
 
       {:error, %NimbleOptions.ValidationError{} = error} ->
@@ -143,7 +132,7 @@ defmodule AbacatePay.Pix do
           {:ok, t()} | {:error, any()}
   def simulate_payment(id, metadata \\ %{}) do
     with {:ok, response} <- Api.Pix.simulate_payment(id, metadata) do
-      build_pretty_pix_qrcode(response)
+      build_struct(response)
     end
   end
 
@@ -152,12 +141,12 @@ defmodule AbacatePay.Pix do
 
   ## Examples
       iex> AbacatePay.Pix.check_status("pix_charabc123456789")
-      {:ok, %AbacatePay.Pix{status: :pending, expires_at: "2026-01-01T12:00:00Z"}}
+      {:ok, %AbacatePay.Pix{status: :pending, expires_at: ~U[2026-01-01T12:00:00Z]}}
   """
   @spec check_status(id :: id()) :: {:ok, t()} | {:error, any()}
   def check_status(id) do
     with {:ok, response} <- Api.Pix.check_status(id) do
-      build_pretty_pix_qrcode(response)
+      build_struct(response)
     end
   end
 
@@ -173,12 +162,11 @@ defmodule AbacatePay.Pix do
       ...>   "brCode" => "00020126360014BR.GOV.BCB.PIX0136+551199999999520400005303986540415005802BR5925Fulano de Tal6009Sao Paulo61080540900062070503***63041D3D",
       ...>   "brCodeBase64" => "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAYAAAC0...",
       ...>   "platformFee" => 80,
-      ...>   "description" => "PIX Payment for order #1234",
       ...>   "createdAt" => "2026-01-01T12:00:00Z",
       ...>   "updatedAt" => "2026-01-01T12:05:00Z",
       ...>   "expiresAt" => "2026-01-02T12:00:00Z"
       ...> }
-      iex> AbacatePay.Pix.build_pretty_pix_qrcode(raw_data)
+      iex> AbacatePay.Pix.build_struct(raw_data)
       {:ok, %AbacatePay.Pix{
         id: "pix_charabc123456789",
         amount: 1500,
@@ -187,31 +175,16 @@ defmodule AbacatePay.Pix do
         br_code: "00020126360014BR.GOV.BCB.PIX0136+551199999999520400005303986540415005802BR5925Fulano de Tal6009Sao Paulo61080540900062070503***63041D3D",
         br_code_base_64: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAYAAAC0...",
         platform_fee: 80,
-        description: "PIX Payment for order #1234",
         created_at: ~U[2026-01-01T12:00:00Z],
         updated_at: ~U[2026-01-01T12:05:00Z],
         expires_at: ~U[2026-01-02T12:00:00Z]
       }}
   """
-  @spec build_pretty_pix_qrcode(raw_data :: map()) :: {:ok, t()}
-  def build_pretty_pix_qrcode(raw_data) do
-    created_at =
-      case raw_data["createdAt"] do
-        nil -> nil
-        datetime_str -> DateTime.from_iso8601(datetime_str) |> elem(1)
-      end
-
-    updated_at =
-      case raw_data["updatedAt"] do
-        nil -> nil
-        datetime_str -> DateTime.from_iso8601(datetime_str) |> elem(1)
-      end
-
-    expires_at =
-      case raw_data["expiresAt"] do
-        nil -> nil
-        datetime_str -> DateTime.from_iso8601(datetime_str) |> elem(1)
-      end
+  @spec build_struct(raw_data :: map()) :: {:ok, t()}
+  def build_struct(raw_data) do
+    created_at = build_struct_datetime(raw_data["createdAt"])
+    updated_at = build_struct_datetime(raw_data["updatedAt"])
+    expires_at = build_struct_datetime(raw_data["expiresAt"])
 
     pretty_fields = %AbacatePay.Pix{
       id: raw_data["id"],
@@ -221,7 +194,6 @@ defmodule AbacatePay.Pix do
       br_code: raw_data["brCode"],
       br_code_base_64: raw_data["brCodeBase64"],
       platform_fee: raw_data["platformFee"],
-      description: raw_data["description"],
       created_at: created_at,
       updated_at: updated_at,
       expires_at: expires_at
@@ -242,12 +214,11 @@ defmodule AbacatePay.Pix do
       ...>   br_code: "00020126360014BR.GOV.BCB.PIX0136+551199999999520400005303986540415005802BR5925Fulano de Tal6009Sao Paulo61080540900062070503***63041D3D",
       ...>   br_code_base_64: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAYAAAC0...",
       ...>   platform_fee: 80,
-      ...>   description: "PIX Payment for order #1234",
       ...>   created_at: ~U[2026-01-01T12:00:00Z],
       ...>   updated_at: ~U[2026-01-01T12:05:00Z],
       ...>   expires_at: ~U[2026-01-02T12:00:00Z]
       ...> }
-      iex> AbacatePay.Pix.build_api_pix_qrcode(pix_qrcode)
+      iex> AbacatePay.Pix.build_raw(pix_qrcode)
       {:ok, %{
         id: "pix_charabc123456789",
         amount: 1500,
@@ -256,41 +227,25 @@ defmodule AbacatePay.Pix do
         brCode: "00020126360014BR.GOV.BCB.PIX0136+551199999999520400005303986540415005802BR5925Fulano de Tal6009Sao Paulo61080540900062070503***63041D3D",
         brCodeBase64: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAYAAAC0...",
         platformFee: 80,
-        description: "PIX Payment for order #1234",
         createdAt: "2026-01-01T12:00:00Z",
         updatedAt: "2026-01-01T12:05:00Z",
         expiresAt: "2026-01-02T12:00:00Z"
       }}
   """
-  @spec build_api_pix_qrcode(pretty_pix_qrcode :: t()) :: {:ok, map()}
-  def build_api_pix_qrcode(pretty_pix_qrcode) do
-    created_at =
-      case pretty_pix_qrcode.created_at do
-        nil -> nil
-        datetime -> DateTime.to_iso8601(datetime)
-      end
-
-    updated_at =
-      case pretty_pix_qrcode.updated_at do
-        nil -> nil
-        datetime -> DateTime.to_iso8601(datetime)
-      end
-
-    expires_at =
-      case pretty_pix_qrcode.expires_at do
-        nil -> nil
-        datetime -> DateTime.to_iso8601(datetime)
-      end
+  @spec build_raw(pix :: t()) :: {:ok, map()}
+  def build_raw(pix) do
+    created_at = build_raw_datetime(pix.created_at)
+    updated_at = build_raw_datetime(pix.updated_at)
+    expires_at = build_raw_datetime(pix.expires_at)
 
     api_fields = %{
-      id: pretty_pix_qrcode.id,
-      amount: pretty_pix_qrcode.amount,
-      status: Util.normalize_atom(pretty_pix_qrcode.status),
-      devMode: pretty_pix_qrcode.dev_mode,
-      brCode: pretty_pix_qrcode.br_code,
-      brCodeBase64: pretty_pix_qrcode.br_code_base_64,
-      platformFee: pretty_pix_qrcode.platform_fee,
-      description: pretty_pix_qrcode.description,
+      id: pix.id,
+      amount: pix.amount,
+      status: Util.normalize_atom(pix.status),
+      devMode: pix.dev_mode,
+      brCode: pix.br_code,
+      brCodeBase64: pix.br_code_base_64,
+      platformFee: pix.platform_fee,
       createdAt: created_at,
       updatedAt: updated_at,
       expiresAt: expires_at
@@ -298,4 +253,16 @@ defmodule AbacatePay.Pix do
 
     {:ok, api_fields}
   end
+
+  @doc false
+  defp build_struct_datetime(nil), do: nil
+
+  @doc false
+  defp build_struct_datetime(datetime_str), do: DateTime.from_iso8601(datetime_str) |> elem(1)
+
+  @doc false
+  defp build_raw_datetime(nil), do: nil
+
+  @doc false
+  defp build_raw_datetime(datetime), do: DateTime.to_iso8601(datetime)
 end

@@ -10,11 +10,11 @@ defmodule AbacatePay.Api.Customer do
 
   ## Examples
 
-      iex> AbacatePay.Api.Customer.create_customer(%{name: "Daniel Lima", cellphone: "(11) 4002-8922", email: "daniel.lima@example.com", taxId: "123.456.789-01"})
+      iex> AbacatePay.Api.Customer.create(%{name: "Daniel Lima", cellphone: "(11) 4002-8922", email: "daniel.lima@example.com", taxId: "123.456.789-01"})
       {:ok, %{...}}
   """
-  @spec create_customer(body :: map()) :: {:ok, map()} | {:error, ApiError.t()} | {:error, any()}
-  def create_customer(body) do
+  @spec create(body :: map()) :: {:ok, map()} | {:error, ApiError.t()} | {:error, any()}
+  def create(body) do
     HTTPClient.post(
       "/customers/create",
       body
@@ -22,15 +22,32 @@ defmodule AbacatePay.Api.Customer do
   end
 
   @doc """
-  Gets a list of all customers.
+  Lists customers.
 
   ## Examples
 
-      iex> AbacatePay.Api.Customer.list_customers()
+      iex> AbacatePay.Api.Customer.list(%{page: 1, limit: 20})
       {:ok, [%{...}, ...]}
   """
-  @spec list_customers() :: {:ok, list(map())} | {:error, ApiError.t()} | {:error, any()}
-  def list_customers do
-    HTTPClient.get("/customers/list")
+  @spec list(params :: map()) :: {:ok, list(), map()} | {:error, ApiError.t()} | {:error, any()}
+  def list(params \\ %{page: 1, limit: 20}) do
+    query = URI.encode_query(%{"page" => params.page, "limit" => params.limit})
+
+    HTTPClient.get("/customers/list?" <> query)
+  end
+
+  @doc """
+  Gets a customer by ID.
+
+  ## Examples
+
+      iex> AbacatePay.Api.Customer.get("cust_aebxkhDZNaMmJeKsy0AHS0FQ")
+      {:ok, %{...}}
+  """
+  @spec get(customer_id :: String.t()) :: {:ok, map()} | {:error, ApiError.t()} | {:error, any()}
+  def get(customer_id) do
+    query = URI.encode_query(%{"id" => customer_id})
+
+    HTTPClient.get("/customers/get?" <> query)
   end
 end

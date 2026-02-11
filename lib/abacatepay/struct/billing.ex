@@ -157,7 +157,7 @@ defmodule AbacatePay.Billing do
 
         parsed_customer =
           with %Customer{} = customer_struct <- validated_options[:customer],
-               {:ok, customer_map} <- Customer.build_api_customer(customer_struct) do
+               {:ok, customer_map} <- Customer.build_raw(customer_struct) do
             customer_map.metadata
           else
             _ -> nil
@@ -242,7 +242,7 @@ defmodule AbacatePay.Billing do
 
     pretty_customer =
       with customer_data when is_map(customer_data) <- raw_data["customer"],
-           {:ok, customer_struct} <- Customer.build_pretty_customer(customer_data) do
+           {:ok, customer_struct} <- Customer.build_struct(customer_data) do
         customer_struct
       else
         _ -> nil
@@ -332,7 +332,7 @@ defmodule AbacatePay.Billing do
   def build_api_billing(pretty_billing) do
     customer =
       with %Customer{} = customer_struct <- pretty_billing.customer,
-           {:ok, customer_map} <- Customer.build_api_customer(customer_struct) do
+           {:ok, customer_map} <- Customer.build_raw(customer_struct) do
         customer_map
       else
         _ -> nil
